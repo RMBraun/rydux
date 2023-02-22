@@ -1,0 +1,33 @@
+{
+  "name": "rydux",
+  "version": "1.0.0",
+  "description": "Simple flux framework for JavaScript and NodeJs",
+  "main": "redux.js",
+  "scripts": {
+    "test": "npm run tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RMBraun/rydux.git"
+  },
+  "keywords": [
+    "flux",
+    "redux",
+    "React",
+    "NodeJs",
+    "NextJs"
+  ],
+  "author": "Ryan Braun",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/RMBraun/rydux/issues"
+  },
+  "homepage": "https://github.com/RMBraun/rydux#readme",
+  "dependencies": {
+    "eventemitter3": "^4.0.7",
+    "immer": "^9.0.12"
+  },
+  "devDependencies": {
+    "@types/node": "^18.14.0"
+  }
+}
