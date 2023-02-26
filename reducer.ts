@@ -1,4 +1,4 @@
-import Rydux from 'rydux'
+import Rydux, { DelayedActionFunction } from 'rydux'
 
 class Reducer {
   Rydux: typeof Rydux
@@ -61,7 +61,7 @@ class Reducer {
     return this.Rydux.getStore(this.id)
   }
 
-  batchActions(...chainedActions) {
+  batchActions(...chainedActions: Array<DelayedActionFunction>) {
     this.Rydux.callActions(chainedActions)
   }
 }
