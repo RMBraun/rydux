@@ -1,11 +1,11 @@
-import Rydux, { DelayedActionFunction } from 'rydux'
+import Rydux, { ActionFunction, ActionId, DelayedActionFunction } from 'rydux'
 
 class Reducer {
   Rydux: typeof Rydux
   initialState: Record<string, any> | undefined
   id: string | undefined
-  Actions: Record<string, any> | undefined
-  DelayedActions: any
+  Actions: Record<ActionId, ActionFunction> | undefined
+  DelayedActions: Record<ActionId, DelayedActionFunction> | undefined
 
   constructor(newRydux: typeof Rydux) {
     if (newRydux) {
@@ -39,10 +39,14 @@ class Reducer {
     this.DelayedActions =
       this.Actions &&
       Object.keys(this.Actions).reduce((acc, actionId) => {
-        acc[actionId] = (payload: any) => this.Rydux.chainAction(reducerId, actionId, payload)
+        const delayedAction = this.Rydux.createDelayedAction(reducerId, actionId)
+
+        if (delayedAction) {
+          acc[actionId] = delayedAction
+        }
 
         return acc
-      }, {} as Record<keyof typeof this.Actions, (payload: any) => void>)
+      }, {} as Record<keyof typeof this.Actions, DelayedActionFunction>)
 
     this.Rydux.setReducer(this)
 
@@ -62,7 +66,7 @@ class Reducer {
   }
 
   batchActions(...chainedActions: Array<DelayedActionFunction>) {
-    this.Rydux.callActions(chainedActions)
+    this.Rydux.callDelayedActions(chainedActions)
   }
 }
 

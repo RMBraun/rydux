@@ -22,7 +22,7 @@ type PickerFunction = (store: Store, props?: ReactComponentProps) => Store
 
 type ChangeListenerFunction = (...args: any) => void
 
-type ActionId = string
+export type ActionId = string
 
 type EpicId = string
 
@@ -30,7 +30,7 @@ type UserActionFunction = (store: Store, payload: unknown) => void
 
 type RawActionFunction = (payload: unknown, isDelayed?: boolean, isLast?: boolean) => void
 
-type ActionFunction = {
+export type ActionFunction = {
   type: TYPES
 } & RawActionFunction
 
@@ -46,12 +46,30 @@ type EpicFunction = {
   type: TYPES
 } & RawEpicFunction
 
+type RyduxTypes = {
+  actions: Record<ReducerId, Record<ActionId, ActionFunction>>
+}
+
+type ChangeListener = ({
+  ...props
+}: {
+  id: ActionId
+  storeId: ReducerId
+  type: TYPES
+  time: number
+  payload: unknown
+  prevStore?: Store
+  store: Store
+  isDelayed?: boolean
+  isLast?: boolean
+}) => void
+
 class Rydux {
   //class properties type declarations
   #EventEmitter: EE
   #store: Store
-  #actionListeners: Map<any, any>
-  #actions: Record<ReducerId, Record<ActionId, ActionFunction>>
+  #actionListeners: Map<any, ChangeListener>
+  #actions: RyduxTypes['actions']
   #epics: Record<ReducerId, Record<ActionId, EpicFunction>>
   #reducers: Record<ReducerId, Reducer>
   static #instance: Rydux
@@ -116,8 +134,12 @@ class Rydux {
     return store
   }
 
-  static getActions(reducerId?: ReducerId) {
-    return reducerId == null ? Rydux.#getInstance().#actions : Rydux.#getInstance().#actions[reducerId]
+  static getActions<T extends ReducerId | null | undefined>(reducerId?: T) {
+    return (reducerId == null ? Rydux.#getInstance().#actions : Rydux.#getInstance().#actions[reducerId]) as T extends
+      | null
+      | undefined
+      ? RyduxTypes['actions']
+      : RyduxTypes['actions'][ReducerId] | undefined
   }
 
   static getEpics() {
@@ -159,63 +181,75 @@ class Rydux {
   }
 
   /*
-  example usages:
-  import { Actions } from './myRedux'
+    example usages:
+    import { Actions } from './myRedux'
 
-  Redux.addActionListener(function ({ id, storeId, type, time, payload, prevStore, store }) {
-    if(id === Actions.actionOne.toString()) {
-        console.log(id, payload)
+    Redux.addActionListener(function ({ id, storeId, type, time, payload, prevStore, store }) {
+      if(id === Actions.actionOne.toString()) {
+          console.log(id, payload)
+      }
+    })
+  */
+  static addActionListener(changeListener: ChangeListener | Record<string, ChangeListener> | Array<ChangeListener>) {
+    if (typeof changeListener === 'function') {
+      Rydux.#getInstance().#EventEmitter.addListener(EVENTS.ACTION_LISTENER, changeListener)
+    } else {
+      throw new Error('changeListener must be of type function')
     }
-  })
+  }
 
-  //listen for Redux Actions and Epics
-  Redux.addActionListener({
-    [Actions.actionOne]: ({ id, storeId, type, time, payload, prevStore, store }) => {
-      console.log(id, payload)
-    }
-  })
-
-  //can bind to multiple actions for a single callback
-  Redux.addActionListener([
-    { ids: [Actions.actionOne, Actions.actionTwo], 
-      callback: ({ id, storeId, type, time, payload, prevStore, store }) => {
+  /*
+    //listen for Redux Actions and Epics
+    Redux.addActionListener({
+      [Actions.actionOne]: ({ id, storeId, type, time, payload, prevStore, store }) => {
         console.log(id, payload)
       }
-    }
-  ])
-  
-  static addActionListener(changeListener) {
-    const type = changeListener?.constructor?.name
-
-    if (type === Function.name) {
-      Rydux.#getInstance().#EventEmitter.addListener(EVENTS.ACTION_LISTENER, changeListener)
-    } else if (type === Object.name) {
-      Object.entries(changeListener).forEach(([key, callback]) => {
+    })
+  */
+  static addActionListenerMap(changeListenerMap: Record<string, ChangeListener>) {
+    if (typeof changeListenerMap === 'object') {
+      Object.entries(changeListenerMap).forEach(([key, callback]) => {
         if (callback == null) {
-          throw new Error(`Action listener for ${key} cannot be null`)
+          throw new Error(`changeListener for ${key} cannot be null`)
         }
 
         if (typeof callback !== 'function') {
-          throw new Error(`Action listener for ${key} must be a Function`)
+          throw new Error(`changeListener for ${key} must be a Function`)
         }
 
         if (typeof key !== 'string') {
-          throw new Error('All action listener keys must be Strings')
+          throw new Error('All changeListener keys must be Strings')
         }
       })
 
-      const actionListenerMapFunc = (info) => {
-        const listenerForId = changeListener[info.id]
+      const actionListenerMapFunc = (info: Parameters<ChangeListener>[0]) => {
+        const listenerForId = changeListenerMap[info.id]
         if (listenerForId) {
           listenerForId(info)
         }
       }
 
-      Rydux.#getInstance().#actionListeners.set(changeListener, actionListenerMapFunc)
+      Rydux.#getInstance().#actionListeners.set(changeListenerMap, actionListenerMapFunc)
 
       Rydux.#getInstance().#EventEmitter.addListener(EVENTS.ACTION_LISTENER, actionListenerMapFunc)
-    } else if (type === Array.name) {
-      changeListener.forEach((listener, i) => {
+    } else {
+      throw new Error('Action listener must be of type Object')
+    }
+  }
+
+  /*
+    //can bind to multiple actions for a single callback
+    Redux.addActionListener([
+      { ids: [Actions.actionOne, Actions.actionTwo], 
+        callback: ({ id, storeId, type, time, payload, prevStore, store }) => {
+          console.log(id, payload)
+        }
+      }
+    ]) 
+   */
+  static addActionListenerList(changeListenerList: Array<{ ids: Array<string>; callback: ChangeListener }>) {
+    if (Array.isArray(changeListenerList)) {
+      changeListenerList.forEach((listener, i) => {
         if (listener == null) {
           throw new Error(`Action listener at index ${i} cannot be null`)
         }
@@ -237,12 +271,12 @@ class Rydux {
       })
 
       //in case they use the Action function directly as the ID rather than the string ID
-      const formattedChangeListener = changeListener.map((listener) => ({
+      const formattedChangeListener = changeListenerList.map((listener) => ({
         ...listener,
         ids: listener.ids.map((id) => id.toString()),
       }))
 
-      const actionListenerMapFunc = (info) => {
+      const actionListenerMapFunc = (info: Parameters<ChangeListener>[0]) => {
         formattedChangeListener.forEach(({ ids, callback }) => {
           if (ids.includes(info.id)) {
             callback(info)
@@ -250,15 +284,15 @@ class Rydux {
         })
       }
 
-      Rydux.#getInstance().#actionListeners.set(changeListener, actionListenerMapFunc)
+      Rydux.#getInstance().#actionListeners.set(changeListenerList, actionListenerMapFunc)
 
       Rydux.#getInstance().#EventEmitter.addListener(EVENTS.ACTION_LISTENER, actionListenerMapFunc)
     } else {
-      throw new Error('Action listener must be of type function, object, or array')
+      throw new Error('Action listener must be of type array')
     }
   }
 
-  static removeActionListener(changeListener) {
+  static removeActionListener(changeListener: ChangeListener) {
     if (Rydux.#getInstance().#actionListeners.has(changeListener)) {
       Rydux.#getInstance().#EventEmitter.removeListener(
         EVENTS.ACTION_LISTENER,
@@ -268,7 +302,6 @@ class Rydux {
       Rydux.#getInstance().#actionListeners.delete(changeListener)
     }
   }
- */
 
   static createAction(reducerId: ReducerId, actionFunction: UserActionFunction, actionName = '') {
     if (typeof actionFunction !== 'function') {
@@ -330,7 +363,7 @@ class Rydux {
     return action
   }
 
-  static createActions(reducerId?: string, actions: Record<ActionId, UserActionFunction> = {}) {
+  static createActions(reducerId?: ReducerId, actions: Record<ActionId, UserActionFunction> = {}) {
     if (typeof reducerId !== 'string') {
       throw new Error(`You must specify a non-null String reducerId when creating rydux actions`)
     } else if (actions.constructor.name !== 'Object') {
@@ -404,7 +437,7 @@ class Rydux {
     )
   }
 
-  static callAction(reducerId: ReducerId, actionId: ActionId, payload: unknown, { isDelayed = false } = {}) {
+  static createDelayedAction(reducerId: ReducerId, actionId: ActionId) {
     const action = Rydux.#getInstance().#actions?.[reducerId]?.[actionId]
 
     if (typeof action !== 'function' || action.type !== TYPES.ACTION) {
@@ -412,36 +445,24 @@ class Rydux {
       return
     }
 
-    if (isDelayed) {
-      const delayedAction = function (isLast = false) {
-        return action(payload, true, isLast)
-      }
-
-      delayedAction.type = TYPES.DELAYED_ACTION
-
-      return delayedAction
-    } else {
-      action(payload)
+    const delayedAction: DelayedActionFunction = function (isLast = false) {
+      return (payload: unknown) => action(payload, true, isLast)
     }
+
+    delayedAction.type = TYPES.DELAYED_ACTION
+
+    return delayedAction
   }
 
-  static chainAction(reducerId: ReducerId, actionId: ActionId, payload: unknown) {
-    return Rydux.callAction(reducerId, actionId, payload, { isDelayed: true })
-  }
+  static callAction(reducerId: ReducerId, actionId: ActionId, payload: unknown) {
+    const action = Rydux.#getInstance().#actions?.[reducerId]?.[actionId]
 
-  static callActions(delayedActions: Array<DelayedActionFunction>) {
-    const actions = ([] as Array<DelayedActionFunction>).concat(delayedActions)
+    if (typeof action !== 'function' || action.type !== TYPES.ACTION) {
+      console.warn(`The action ${actionId} is not a function for reducer ${reducerId}`)
+      return
+    }
 
-    actions.forEach((delayedAction, i) => {
-      if (typeof delayedAction !== 'function' || delayedAction.type !== TYPES.DELAYED_ACTION) {
-        throw new Error('Invalid Action received in CallActions. Expecting Delayed Actions only')
-      }
-
-      delayedAction(i === actions.length - 1)
-    })
-
-    //notify everyone
-    Rydux.#getInstance().#EventEmitter.emit(EVENTS.UPDATE, Rydux.#getInstance().#store)
+    return action(payload)
   }
 
   static callEpic(reducerId: ReducerId, epicId: EpicId, payload: unknown) {
@@ -452,6 +473,19 @@ class Rydux {
     } else {
       console.warn(`The epic ${epicId} is not a function for reducer ${reducerId}`)
     }
+  }
+
+  static callDelayedActions(delayedActions: Array<DelayedActionFunction> = []) {
+    delayedActions.forEach((delayedAction, i) => {
+      if (typeof delayedAction !== 'function' || delayedAction.type !== TYPES.DELAYED_ACTION) {
+        throw new Error('Invalid Action received in CallActions. Expecting Delayed Actions only')
+      }
+
+      delayedAction(i === delayedActions.length - 1)
+    })
+
+    //notify everyone
+    Rydux.#getInstance().#EventEmitter.emit(EVENTS.UPDATE, Rydux.#getInstance().#store)
   }
 }
 
