@@ -1,16 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES6",
     "lib": [
       "DOM",
       "ESNext",
     ],
     "esModuleInterop": true,
-    "baseUrl": "./",
     "allowJs": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "ESNext",
+    "module": "CommonJS",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "sourceMap": true,
@@ -20,7 +19,8 @@
   "files": [
     "rydux.ts",
     "reducer.ts",
-    "const.ts"
+    "const.ts",
+    "listener.tsx"
   ],
   "exclude": [
     "node_modules",

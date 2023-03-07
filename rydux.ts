@@ -1,34 +1,31 @@
+import EE from 'eventemitter3'
+import { produce } from 'immer'
+import Reducer, { ReducerId } from './reducer'
+import { EVENTS, TYPES } from './const'
+
 declare global {
   interface Window {
     Rydux: typeof Rydux
   }
 }
 
-import EE from 'eventemitter3'
-import { produce } from 'immer'
-import Reducer from 'reducer'
+export type ReactComponentProps = Record<string, unknown>
 
-import { EVENTS, TYPES } from './const'
+export type StoreSlice = Record<string, unknown>
 
-type ReactComponentProps = Record<string, unknown>
+export type Store = Record<ReducerId, StoreSlice>
 
-type ReducerId = NonNullable<Reducer['id']>
+export type PickerFunction = (store: Store, props?: ReactComponentProps) => Store
 
-type StoreSlice = Record<string, unknown>
-
-type Store = Record<ReducerId, StoreSlice>
-
-type PickerFunction = (store: Store, props?: ReactComponentProps) => Store
-
-type ChangeListenerFunction = (...args: any) => void
+export type ChangeListenerFunction = (store: Store) => void
 
 export type ActionId = string
 
-type EpicId = string
+export type EpicId = string
 
-type UserActionFunction = (store: Store, payload: unknown) => void
+export type UserActionFunction<S extends Store> = (store: S, payload: any) => void
 
-type RawActionFunction = (payload: unknown, isDelayed?: boolean, isLast?: boolean) => void
+export type RawActionFunction = (payload: any, isDelayed?: boolean, isLast?: boolean) => void
 
 export type ActionFunction = {
   type: TYPES
@@ -36,21 +33,19 @@ export type ActionFunction = {
 
 export type DelayedActionFunction = {
   type: TYPES
-} & ((isLast?: boolean) => void)
+} & ((isLast?: boolean) => RawActionFunction)
 
-type UserEpicFunction = (store: Store, payload: unknown) => void
+export type UserEpicFunction = (store: Store, payload: unknown) => void
 
-type RawEpicFunction = (payload: unknown) => void
+export type RawEpicFunction = (payload: unknown) => void
 
-type EpicFunction = {
+export type EpicFunction = {
   type: TYPES
 } & RawEpicFunction
 
-type RyduxTypes = {
-  actions: Record<ReducerId, Record<ActionId, ActionFunction>>
-}
+export type Actions = Record<ReducerId, Record<ActionId, ActionFunction>>
 
-type ChangeListener = ({
+export type ChangeListener = ({
   ...props
 }: {
   id: ActionId
@@ -64,12 +59,12 @@ type ChangeListener = ({
   isLast?: boolean
 }) => void
 
-class Rydux {
+export class Rydux {
   //class properties type declarations
   #EventEmitter: EE
   #store: Store
   #actionListeners: Map<any, ChangeListener>
-  #actions: RyduxTypes['actions']
+  #actions: Actions
   #epics: Record<ReducerId, Record<ActionId, EpicFunction>>
   #reducers: Record<ReducerId, Reducer>
   static #instance: Rydux
@@ -138,15 +133,15 @@ class Rydux {
     return (reducerId == null ? Rydux.#getInstance().#actions : Rydux.#getInstance().#actions[reducerId]) as T extends
       | null
       | undefined
-      ? RyduxTypes['actions']
-      : RyduxTypes['actions'][ReducerId] | undefined
+      ? Actions
+      : Actions[ReducerId] | undefined
   }
 
   static getEpics() {
     return Rydux.#getInstance().#epics
   }
 
-  static init(initialState = {}, defaultState = {}) {
+  static init(initialState: Store = {}, defaultState: Store = {}) {
     if (typeof initialState !== 'object' || initialState.constructor !== {}.constructor) {
       throw new Error(
         `Rydux initial state must be an object ({}) but received ${initialState && initialState.constructor}`
@@ -303,7 +298,7 @@ class Rydux {
     }
   }
 
-  static createAction(reducerId: ReducerId, actionFunction: UserActionFunction, actionName = '') {
+  static createAction<S extends Store>(reducerId: ReducerId, actionFunction: UserActionFunction<S>, actionName = '') {
     if (typeof actionFunction !== 'function') {
       throw new Error(`Action function must be of type function. Instead got ${typeof actionFunction}`)
     }
@@ -312,7 +307,7 @@ class Rydux {
 
     const rawAction: RawActionFunction = function (payload: unknown, isDelayed = false, isLast = false) {
       //get new store
-      const newStore: Store = produce(Rydux.#getInstance().#store, (draft) => actionFunction(draft, payload))
+      const newStore: S = produce(Rydux.#getInstance().#store as S, (draft) => actionFunction(draft as S, payload))
       Rydux.#getInstance().#store = newStore
 
       //send new action log to listeners
@@ -363,7 +358,7 @@ class Rydux {
     return action
   }
 
-  static createActions(reducerId?: ReducerId, actions: Record<ActionId, UserActionFunction> = {}) {
+  static createActions<S extends Store>(reducerId?: ReducerId, actions: Record<ActionId, UserActionFunction<S>> = {}) {
     if (typeof reducerId !== 'string') {
       throw new Error(`You must specify a non-null String reducerId when creating rydux actions`)
     } else if (actions.constructor.name !== 'Object') {
