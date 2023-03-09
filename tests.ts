@@ -22,20 +22,18 @@ type FullStore = {
   }
 }
 
-type ActionFunctionTypes = { testAction: number; ooga: string }
-
-const testReducer = new Reducer<FullStore, ActionFunctionTypes>(Rydux, 'login', INITIAL_STATE, {
+const testReducer = new Reducer<FullStore, { testAction: number; test: string }>(Rydux, 'login', INITIAL_STATE, {
   testAction: (store, payload) => {
     console.log(payload)
     store[ID]
   },
-  ooga: (store, payload) => {
+  test: (store, payload) => {
     console.log(payload)
     store[ID]
   },
 })
 
-const test = testReducer.Actions
+const test = testReducer.Actions.test('test')
 
-type ActionFunctions = typeof testReducer.Actions
-type DelayedActionFunctions = typeof testReducer.DelayedActions
+const ActionFunctions = testReducer.Actions.testAction(333)
+const DelayedActionFunctions = testReducer.DelayedActions.test('test string')

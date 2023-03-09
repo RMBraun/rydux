@@ -23,17 +23,33 @@ export type ActionId = string
 
 export type EpicId = string
 
-export type UserActionFunction<S extends Store> = (store: S, payload: any) => void
+export type UserActionFunctionsMap = Record<string, any>
 
-export type RawActionFunction = (payload: any, isDelayed?: boolean, isLast?: boolean) => void
+export type UserActionFunction<S extends Store, T> = (store: S, payload: T) => void
 
-export type ActionFunction = {
-  type: TYPES
-} & RawActionFunction
+export type UserActionFunctions<S extends Store, UAFM extends UserActionFunctionsMap> = {
+  [P in keyof UAFM]: UserActionFunction<S, UAFM[P]>
+}
 
-export type DelayedActionFunction = {
-  type: TYPES
-} & ((isLast?: boolean) => RawActionFunction)
+export type ActionFunctions<
+  S extends Store = Store,
+  UAFM extends UserActionFunctionsMap = UserActionFunctionsMap,
+  UAFS extends UserActionFunctions<S, UAFM> = UserActionFunctions<S, UAFM>
+> = {
+  [P in keyof UAFS]: ActionFunction<Parameters<UAFS[P]>[1]>
+}
+
+export type RawActionFunction<T> = (payload: T, isDelayed?: boolean, isLast?: boolean) => void
+
+export type ActionFunction<T> = {
+  type?: TYPES
+} & ((...a: Parameters<RawActionFunction<T>>) => Promise<ReturnType<RawActionFunction<T>>>)
+
+export type RawDelayedFunction<T> = {
+  type?: TYPES
+} & ((isLast?: boolean) => Promise<ReturnType<RawActionFunction<T>>>)
+
+export type DelayedActionFunction<T = any> = (payload: T) => RawDelayedFunction<T>
 
 export type UserEpicFunction = (store: Store, payload: unknown) => void
 
@@ -43,7 +59,7 @@ export type EpicFunction = {
   type: TYPES
 } & RawEpicFunction
 
-export type Actions = Record<ReducerId, Record<ActionId, ActionFunction>>
+export type Actions = Record<ReducerId, ActionFunctions>
 
 export type ChangeListener = ({
   ...props
@@ -129,12 +145,14 @@ export class Rydux {
     return store
   }
 
-  static getActions<T extends ReducerId | null | undefined>(reducerId?: T) {
+  static getActions<T extends ReducerId | undefined | null, AFs extends ActionFunctions = ActionFunctions>(
+    reducerId?: T
+  ) {
     return (reducerId == null ? Rydux.#getInstance().#actions : Rydux.#getInstance().#actions[reducerId]) as T extends
       | null
       | undefined
       ? Actions
-      : Actions[ReducerId] | undefined
+      : AFs | undefined
   }
 
   static getEpics() {
@@ -298,14 +316,18 @@ export class Rydux {
     }
   }
 
-  static createAction<S extends Store>(reducerId: ReducerId, actionFunction: UserActionFunction<S>, actionName = '') {
+  static createAction<S extends Store, T>(
+    reducerId: ReducerId,
+    actionFunction: UserActionFunction<S, T>,
+    actionName = ''
+  ) {
     if (typeof actionFunction !== 'function') {
       throw new Error(`Action function must be of type function. Instead got ${typeof actionFunction}`)
     }
 
     const actionId: ActionId = actionFunction.name || actionName
 
-    const rawAction: RawActionFunction = function (payload: unknown, isDelayed = false, isLast = false) {
+    const rawAction: RawActionFunction<T> = function (payload: T, isDelayed = false, isLast = false) {
       //get new store
       const newStore: S = produce(Rydux.#getInstance().#store as S, (draft) => actionFunction(draft as S, payload))
       Rydux.#getInstance().#store = newStore
@@ -332,7 +354,7 @@ export class Rydux {
       }
     }
 
-    const action: ActionFunction = function (...props) {
+    const action: ActionFunction<T> = function (...props) {
       return new Promise<void>((res) => {
         Rydux.#getInstance().#EventEmitter.emit(EVENTS.ACTION, () => {
           rawAction(...props)
@@ -358,16 +380,25 @@ export class Rydux {
     return action
   }
 
-  static createActions<S extends Store>(reducerId?: ReducerId, actions: Record<ActionId, UserActionFunction<S>> = {}) {
+  static createActions<
+    S extends Store,
+    UAFM extends UserActionFunctionsMap,
+    UAFs extends UserActionFunctions<S, UAFM> = UserActionFunctions<S, UAFM>,
+    AFs extends ActionFunctions<S, UAFM, UAFs> = ActionFunctions<S, UAFM, UAFs>
+  >(reducerId?: ReducerId, actions = {} as UAFs): AFs {
     if (typeof reducerId !== 'string') {
       throw new Error(`You must specify a non-null String reducerId when creating rydux actions`)
     } else if (actions.constructor.name !== 'Object') {
       throw new Error('actions must be an Object')
     }
 
+    // @todo fix typing so that it's inferred
     return Object.fromEntries(
-      Object.entries(actions).map(([actionName, func]) => [actionName, Rydux.createAction(reducerId, func, actionName)])
-    )
+      Object.entries(actions).map(([actionName, func]) => [
+        actionName,
+        Rydux.createAction<S, UAFM>(reducerId, func, actionName),
+      ])
+    ) as unknown as AFs
   }
 
   static createEpic(reducerId: ReducerId, epicFunction: UserEpicFunction, actionName = '') {
@@ -432,7 +463,7 @@ export class Rydux {
     )
   }
 
-  static createDelayedAction(reducerId: ReducerId, actionId: ActionId) {
+  static createDelayedAction<T>(reducerId: ReducerId, actionId: ActionId) {
     const action = Rydux.#getInstance().#actions?.[reducerId]?.[actionId]
 
     if (typeof action !== 'function' || action.type !== TYPES.ACTION) {
@@ -440,16 +471,16 @@ export class Rydux {
       return
     }
 
-    const delayedAction: DelayedActionFunction = function (isLast = false) {
-      return (payload: unknown) => action(payload, true, isLast)
+    const delayedAction: DelayedActionFunction<T> = function (payload: T) {
+      const func = (isLast = false) => action(payload, true, isLast)
+      func.type = TYPES.DELAYED_ACTION
+      return func
     }
-
-    delayedAction.type = TYPES.DELAYED_ACTION
 
     return delayedAction
   }
 
-  static callAction(reducerId: ReducerId, actionId: ActionId, payload: unknown) {
+  static callAction<T>(reducerId: ReducerId, actionId: ActionId, payload: T) {
     const action = Rydux.#getInstance().#actions?.[reducerId]?.[actionId]
 
     if (typeof action !== 'function' || action.type !== TYPES.ACTION) {
@@ -470,7 +501,7 @@ export class Rydux {
     }
   }
 
-  static callDelayedActions(delayedActions: Array<DelayedActionFunction> = []) {
+  static callDelayedActions(delayedActions: Array<RawDelayedFunction<any>> = []) {
     delayedActions.forEach((delayedAction, i) => {
       if (typeof delayedAction !== 'function' || delayedAction.type !== TYPES.DELAYED_ACTION) {
         throw new Error('Invalid Action received in CallActions. Expecting Delayed Actions only')

@@ -1,42 +1,38 @@
-import Rydux, { ActionId, DelayedActionFunction, Store, StoreSlice } from './rydux'
+import Rydux, {
+  type Store,
+  type StoreSlice,
+  type DelayedActionFunction,
+  type RawDelayedFunction,
+  type UserActionFunctionsMap,
+  type UserActionFunctions,
+  type ActionFunctions,
+} from './rydux'
 
 export type ReducerId = string
 
-type UserActionsMap = Record<string, any>
-
-type UserActionFunction<S extends Store, T> = (store: S, payload: T) => void
-
-type UserActionFunctions<S extends Store, UAM extends UserActionsMap> = {
-  [P in keyof UAM]: UserActionFunction<S, UAM[P]>
-}
-
-type ActionFunction<T> = (payload: T) => void
-
-type ActionFunctions<S extends Store, A extends UserActionsMap, UAFS extends UserActionFunctions<S, A>> = {
-  [P in keyof UAFS]: ActionFunction<Parameters<UAFS[P]>[1]>
+type DelayedActionFunctions<
+  S extends Store,
+  UAFM extends UserActionFunctionsMap,
+  UAFs extends UserActionFunctions<S, UAFM>
+> = {
+  [P in keyof UAFs]: DelayedActionFunction<Parameters<UAFs[P]>[1]>
 }
 
 export default class Reducer<
   S extends Store = Store,
-  UAM extends UserActionsMap = UserActionsMap,
+  UAFM extends UserActionFunctionsMap = UserActionFunctionsMap,
   I extends keyof S = keyof S,
-  UAFS extends UserActionFunctions<S, UAM> = {
-    [P in keyof UAM]: (store: S, payload: UAM[P]) => void
-  },
-  AFS extends ActionFunctions<S, UAM, UAFS> = {
-    [P in keyof UAFS]: (payload: Parameters<UAFS[P]>[1]) => void
-  },
-  DAFS extends ActionFunctions<S, UAM, UAFS> = {
-    [P in keyof UAFS]: (payload: Parameters<UAFS[P]>[1]) => void
-  }
+  UAFs extends UserActionFunctions<S, UAFM> = UserActionFunctions<S, UAFM>,
+  AFs extends ActionFunctions<S, UAFM, UAFs> = ActionFunctions<S, UAFM, UAFs>,
+  DAFs extends DelayedActionFunctions<S, UAFM, UAFs> = DelayedActionFunctions<S, UAFM, UAFs>
 > {
   Rydux: typeof Rydux
   initialState: S[I]
-  id: I
-  Actions: AFS
-  DelayedActions: DAFS
+  id: ReducerId
+  Actions: AFs
+  DelayedActions: DAFs
 
-  constructor(newRydux: typeof Rydux, reducerId: I, initialState = {} as S[I], actions = {} as UAFS) {
+  constructor(newRydux: typeof Rydux, reducerId: I, initialState = {} as S[I], actions = {} as UAFs) {
     if (newRydux) {
       this.Rydux = newRydux
     } else if (typeof window !== 'undefined') {
@@ -53,27 +49,28 @@ export default class Reducer<
 
     this.initialState = { ...initialState }
 
-    this.id = reducerId
+    this.id = reducerId as string
 
-    if (this.Rydux.getStore(reducerId as string) == null) {
+    if (this.Rydux.getStore(this.id) == null) {
       this.Rydux.init({
-        [reducerId]: initialState,
+        [this.id]: initialState,
       })
     }
 
-    this.Actions = (this.Rydux.getActions(reducerId as string) ||
-      this.Rydux.createActions<S>(reducerId as string, actions)) as unknown as AFS
+    this.Actions =
+      this.Rydux.getActions<string, AFs>(this.id) || this.Rydux.createActions<S, UAFM, UAFs, AFs>(this.id, actions)
 
     this.DelayedActions = (this.Actions &&
       Object.keys(this.Actions).reduce((acc, actionId) => {
-        const delayedAction = this.Rydux.createDelayedAction(reducerId as string, actionId)
+        const type = this.Actions[actionId]
+        const delayedAction = this.Rydux.createDelayedAction<typeof type>(this.id, actionId)
 
         if (delayedAction) {
           acc[actionId] = delayedAction
         }
 
         return acc
-      }, {} as Record<string, any>)) as unknown as DAFS
+      }, {} as Record<string, any>)) as unknown as DAFs
 
     this.Rydux.setReducer(this)
 
@@ -92,7 +89,7 @@ export default class Reducer<
     return this.Rydux.getStore(this.id as string) as S[I]
   }
 
-  batchActions(...chainedActions: Array<DelayedActionFunction>) {
+  batchActions(...chainedActions: Array<RawDelayedFunction>) {
     this.Rydux.callDelayedActions(chainedActions)
   }
 }
