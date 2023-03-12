@@ -22,18 +22,28 @@ type FullStore = {
   }
 }
 
-const testReducer = new Reducer<FullStore, { testAction: number; test: string }>(Rydux, 'login', INITIAL_STATE, {
-  testAction: (store, payload) => {
-    console.log(payload)
-    store[ID]
-  },
-  test: (store, payload) => {
-    console.log(payload)
-    store[ID]
-  },
-})
+const testReducer = new Reducer<FullStore, 'login', { testAction: number; test: string }>(
+  Rydux,
+  'login',
+  INITIAL_STATE,
+  {
+    testAction: (store, payload) => {
+      console.log(payload)
+      store[ID]
+    },
+    test: (store, payload) => {
+      console.log(payload)
+      store[ID]
+    },
+  }
+)
 
+const Actions = testReducer.Actions
+const id = testReducer.id
 const test = testReducer.Actions.test('test')
 
 const ActionFunctions = testReducer.Actions.testAction(333)
 const DelayedActionFunctions = testReducer.DelayedActions.test('test string')
+
+const StoreSlice = testReducer.getStore()
+const initState = testReducer.initialState

@@ -140,19 +140,18 @@ export class Rydux {
     return Rydux.#instance
   }
 
-  static getStore(reducerId?: ReducerId) {
-    const store = reducerId ? Rydux.#getInstance().#store[reducerId] : Rydux.#getInstance().#store
-    return store
+  static getStore<T extends keyof Store | undefined = undefined>(reducerId?: T) {
+    return (
+      reducerId == null ? Rydux.#getInstance().#store : Rydux.#getInstance().#store[reducerId]
+    ) as T extends undefined ? Store : StoreSlice | undefined
   }
 
-  static getActions<T extends ReducerId | undefined | null, AFs extends ActionFunctions = ActionFunctions>(
+  static getActions<T extends keyof Store | undefined = undefined, AFs extends ActionFunctions = ActionFunctions>(
     reducerId?: T
   ) {
-    return (reducerId == null ? Rydux.#getInstance().#actions : Rydux.#getInstance().#actions[reducerId]) as T extends
-      | null
-      | undefined
-      ? Actions
-      : AFs | undefined
+    return (
+      reducerId == null ? Rydux.#getInstance().#actions : Rydux.#getInstance().#actions[reducerId]
+    ) as T extends undefined ? Actions : AFs | undefined
   }
 
   static getEpics() {
