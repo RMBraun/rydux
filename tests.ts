@@ -1,16 +1,6 @@
 import Rydux from './rydux'
 import Reducer from './reducer'
 
-Rydux.init()
-
-const ID = 'login'
-
-const INITIAL_STATE = {
-  username: '',
-  password: '',
-  code: '',
-}
-
 type FullStore = {
   login: {
     username: string
@@ -22,10 +12,30 @@ type FullStore = {
   }
 }
 
-const testReducer = new Reducer<FullStore, 'login', { testAction: number; test: string }>(
-  Rydux,
+type LoginReducer = Reducer<FullStore, 'login', { testAction: number; test: string }>
+type TestStoreReducer = Reducer<FullStore, 'testStore', { testAction2: string }>
+
+const rydux = new Rydux<
+  FullStore,
+  {
+    login: LoginReducer
+    testStore: TestStoreReducer
+  }
+>()
+
+const testReducers = rydux.getReducers()
+const testStoreReducer = rydux.getReducer('login')
+
+const ID = 'login'
+
+const loginReducer: LoginReducer = new Reducer(
+  rydux,
   'login',
-  INITIAL_STATE,
+  {
+    username: '',
+    password: '',
+    code: '',
+  },
   {
     testAction: (store, payload) => {
       console.log(payload)
@@ -38,12 +48,22 @@ const testReducer = new Reducer<FullStore, 'login', { testAction: number; test: 
   }
 )
 
-const Actions = testReducer.Actions
-const id = testReducer.id
-const test = testReducer.Actions.test('test')
+const Actions = loginReducer.Actions
+const id = loginReducer.id
+const test = loginReducer.Actions.test('test')
 
-const ActionFunctions = testReducer.Actions.testAction(333)
-const DelayedActionFunctions = testReducer.DelayedActions.test('test string')
+const ActionFunctions = loginReducer.Actions.testAction(333)
+const DelayedActionFunctions = loginReducer.DelayedActions.test('test string')
 
-const StoreSlice = testReducer.getStore()
-const initState = testReducer.initialState
+const StoreSlice = loginReducer.getStore()
+const initState = loginReducer.initialState
+
+rydux.initReducer(
+  'login',
+  {
+    code: 'test',
+    password: 'test',
+    username: 'test',
+  },
+  loginReducer
+)

@@ -26,19 +26,17 @@ export default class Reducer<
   AFs extends ActionFunctions<S, UAFM, UAFs> = ActionFunctions<S, UAFM, UAFs>,
   DAFs extends DelayedActionFunctions<S, UAFM, UAFs> = DelayedActionFunctions<S, UAFM, UAFs>
 > {
-  Rydux: typeof Rydux
+  Rydux: Rydux<S>
   initialState: S[I]
   id: I
   Actions: AFs
   DelayedActions: DAFs
 
-  constructor(newRydux: typeof Rydux, reducerId: I, initialState = {} as S[I], actions = {} as UAFs) {
+  constructor(newRydux: Rydux<S>, reducerId: I, initialState: S[I], actions: UAFs) {
     if (newRydux) {
       this.Rydux = newRydux
-    } else if (typeof window !== 'undefined') {
-      this.Rydux = window.Rydux as typeof Rydux
     } else {
-      throw new Error('A Rydux instance must be provided or be available via window.Rydux')
+      throw new Error('A Rydux instance with matching store must be provided')
     }
 
     if (!reducerId) {
@@ -53,15 +51,8 @@ export default class Reducer<
 
     this.id = reducerId
 
-    if (this.Rydux.getStore(this.id as string) == null) {
-      this.Rydux.init({
-        [this.id]: initialState,
-      })
-    }
-
     this.Actions =
-      this.Rydux.getActions<string, AFs>(this.id as string) ||
-      this.Rydux.createActions<S, UAFM, UAFs, AFs>(this.id as string, actions)
+      this.Rydux.getActions<I, AFs>(this.id) || this.Rydux.createActions<S, UAFM, UAFs, AFs>(this.id, actions)
 
     this.DelayedActions = (this.Actions &&
       Object.keys(this.Actions).reduce((acc, actionId: keyof AFs) => {
@@ -75,16 +66,14 @@ export default class Reducer<
         return acc
       }, {} as Record<keyof AFs, DelayedActionFunction<UAFM[keyof UAFM]>>)) as DAFs
 
-    this.Rydux.setReducer(this as Reducer)
+    this.Rydux.initReducer(this.id, initialState, this)
 
     return this
   }
 
-  reset(newState: StoreSlice) {
+  reset(newState: S[I]) {
     if (this.id && this.Rydux.getStore(this.id as string) !== null) {
-      this.Rydux.init({
-        [this.id]: newState || this.initialState,
-      } as Store)
+      this.Rydux.initReducer(this.id, newState, this)
     }
   }
 
