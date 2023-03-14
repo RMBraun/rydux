@@ -66,19 +66,19 @@ export default class Reducer<
         return acc
       }, {} as Record<keyof AFs, DelayedActionFunction<UAFM[keyof UAFM]>>)) as DAFs
 
-    this.Rydux.initReducer(this.id, initialState, this)
+    this.Rydux.initReducer(initialState, this)
 
     return this
   }
 
   reset(newState: S[I]) {
-    if (this.id && this.Rydux.getStore(this.id as string) !== null) {
-      this.Rydux.initReducer(this.id, newState, this)
+    if (this.id && this.Rydux.getStore(this.id) !== null) {
+      this.Rydux.initReducer(newState, this, true)
     }
   }
 
   getStore() {
-    return this.Rydux.getStore(this.id as string) as S[I]
+    return this.Rydux.getStore(this.id) as S[I]
   }
 
   batchActions(...chainedActions: Array<RawDelayedFunction<any>>) {

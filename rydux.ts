@@ -4,8 +4,6 @@ import type Reducer from './reducer'
 import type { ReducerId } from './reducer'
 import { EVENTS, TYPES } from './const'
 
-type ConditionalReturn<Input, Return, Default> = Input extends undefined | null ? Default : Return
-
 export type ReactComponentProps = Record<string, unknown>
 
 export type StoreSlice = Record<string, unknown>
@@ -59,7 +57,7 @@ export type EpicFunction = {
 export type Actions<S extends Store> = Record<keyof S, ActionFunctions>
 
 export type Reducers<S extends Store> = {
-  [P in keyof S]: Reducer<S, P>
+  [P in keyof S]?: Reducer<S, P>
 }
 
 export type ChangeListener = ({
@@ -115,27 +113,32 @@ export class Rydux<
     return this
   }
 
-  //@todo should we prevent re-init?
-  initReducer<K extends keyof FullStore, S extends FullStore[K]>(
-    reducerId: K,
+  initReducer<K extends keyof FullStore, S extends FullStore[K], R extends ReducersMap[K] = ReducersMap[K]>(
     initialState: S,
-    reducer: ReducersMap[K]
-  ) {
+    reducer: R,
+    allowOverride = false
+  ): R {
+    const reducerId = reducer?.id as K
+
+    if (reducer?.constructor?.name !== 'Reducer') {
+      throw new Error('Invalid Reducer. Must be of type Reducer with a valid non-empty ID attribute')
+    }
+
     if (!reducerId) {
-      throw new Error('ReducerId cannot be empty')
+      throw new Error('Reducer Id cannot be empty')
     }
 
     if (initialState?.constructor?.name !== {}.constructor.name) {
       throw new Error(`Reducer initial state must be an Object ({}) but received ${typeof initialState}`)
     }
 
-    if (reducer?.constructor?.name !== 'Reducer') {
-      throw new Error('Invalid Reducer. Must be of type Reducer with a valid non-empty ID attribute')
+    if (!allowOverride && (this.#store[reducerId] != null || this.#reducers[reducerId] != null)) {
+      throw new Error(`Reducer is already initialized`)
     }
 
     this.#store = produce(this.#store, (draft: FullStore) => {
       Object.assign(draft, {
-        [reducerId]: initialState,
+        [reducer.id]: initialState,
       })
     })
 
@@ -154,29 +157,30 @@ export class Rydux<
     return !reducerId ? undefined : this.#reducers[reducerId]
   }
 
-  removeReducer(reducerId: ReducerId) {
+  removeReducer<K extends keyof FullStore>(reducerId: K): void {
     if (!reducerId) {
       return
     }
 
-    //@ts-ignore
-    this.#reducers = Object.fromEntries(Object.entries(this.#reducers).filter(([key]) => key !== reducerId))
+    this.#reducers = Object.fromEntries(
+      Object.entries(this.#reducers).filter(([key]) => key !== reducerId)
+    ) as ReducersMap
   }
 
-  getEventEmitter() {
+  getEventEmitter(): EE {
     return this.#EventEmitter
   }
 
   getStore<K extends keyof FullStore | undefined = undefined>(reducerId?: K) {
-    return (reducerId == null ? this.#store : this.#store[reducerId]) as K extends undefined
-      ? FullStore
-      : StoreSlice | undefined
+    return (reducerId == null ? this.#store : this.#store[reducerId]) as K extends keyof FullStore
+      ? FullStore[K] | undefined
+      : FullStore
   }
 
-  getActions<K extends keyof FullStore, ActionFunctions extends ActionsMap[K] = ActionsMap[K]>(reducerId?: K) {
-    return (reducerId == null ? this.#actions : this.#actions[reducerId]) as K extends undefined
-      ? ActionsMap
-      : ActionFunctions
+  getActions<K extends keyof FullStore | undefined = undefined>(reducerId?: K) {
+    return (reducerId == null ? this.#actions : this.#actions[reducerId]) as K extends keyof FullStore
+      ? ActionsMap[K] | undefined
+      : ActionsMap
   }
 
   getEpics() {

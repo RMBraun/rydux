@@ -22,10 +22,6 @@ const rydux = new Rydux<
     testStore: TestStoreReducer
   }
 >()
-
-const testReducers = rydux.getReducers()
-const testStoreReducer = rydux.getReducer('login')
-
 const ID = 'login'
 
 const loginReducer: LoginReducer = new Reducer(
@@ -50,7 +46,7 @@ const loginReducer: LoginReducer = new Reducer(
 
 const Actions = loginReducer.Actions
 const id = loginReducer.id
-const test = loginReducer.Actions.test('test')
+const testActions = loginReducer.Actions.test('test')
 
 const ActionFunctions = loginReducer.Actions.testAction(333)
 const DelayedActionFunctions = loginReducer.DelayedActions.test('test string')
@@ -58,8 +54,18 @@ const DelayedActionFunctions = loginReducer.DelayedActions.test('test string')
 const StoreSlice = loginReducer.getStore()
 const initState = loginReducer.initialState
 
-rydux.initReducer(
-  'login',
+//------------
+//  tests
+//------------
+
+//----- getReducers
+const getReducersTest = rydux.getReducers()
+
+//----- getReducer
+const getReducerTest = rydux.getReducer('login')
+
+//----- initReducer
+const initReducerTest = rydux.initReducer(
   {
     code: 'test',
     password: 'test',
@@ -67,3 +73,66 @@ rydux.initReducer(
   },
   loginReducer
 )
+
+//----- removeReducer
+const removeReducerTest = rydux.removeReducer('login')
+
+//----- getEventEmitter
+const eventEmittersTest = rydux.getEventEmitter()
+
+//----- getStore - full store
+const fullStoreTest = rydux.getStore()
+
+//----- getStore - specific
+
+const specificStoreTest = rydux.getStore('login')
+
+//----- getActions - all actions
+const getActionsTest = rydux.getActions()
+
+//----- getActions = specific actions
+const specificActionsTest = rydux.getActions('login')
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
+
+//-----
