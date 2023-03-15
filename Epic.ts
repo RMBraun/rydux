@@ -1,7 +1,7 @@
 import type Rydux from './Rydux'
 import { type EpicFunctions, type UserEpicFunctions, type PayloadTypeMap, type Store } from './Rydux'
 
-export type EpicId = string
+export type EpicId = string | number | symbol
 
 export default class Epic<
   S extends Store = Store,
@@ -11,7 +11,7 @@ export default class Epic<
   R extends Rydux<S> = Rydux<S>
 > {
   Rydux: R
-  id: EpicId
+  id: I
   Epics: EpicFunctions<S, PTM, UEFs>
 
   constructor(rydux: R, epicId: I, epics: UEFs) {
@@ -31,7 +31,7 @@ export default class Epic<
 
     this.id = epicId
 
-    this.Epics = this.Rydux.createEpics<PTM, UEFs>(this.id, epics)
+    this.Epics = this.Rydux.createEpics<PTM, UEFs>(this.id as string, epics)
 
     return this
   }

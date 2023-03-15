@@ -3,7 +3,7 @@ import { produce } from 'immer'
 import type Reducer from './Reducer'
 import type { ReducerId } from './Reducer'
 import { EVENTS, TYPES } from './const'
-import { EpicId } from './Epic'
+import Epic, { EpicId } from './Epic'
 
 export type ReactComponentProps = Record<string, unknown>
 
@@ -21,8 +21,8 @@ export type PayloadTypeMap = Record<ActionId | EpicId, any>
 
 export type UserActionFunction<S extends Store, T> = (props: { store: S; payload: T }) => void
 
-export type UserActionFunctions<S extends Store, UAFM extends PayloadTypeMap> = {
-  [P in keyof UAFM]: UserActionFunction<S, UAFM[P]>
+export type UserActionFunctions<S extends Store, PTM extends PayloadTypeMap> = {
+  [P in keyof PTM]: UserActionFunction<S, PTM[P]>
 }
 
 export type RawActionFunction<T> = (payload: T, isDelayed?: boolean, isLast?: boolean) => void
@@ -33,8 +33,8 @@ export type ActionFunction<T> = {
 
 export type ActionFunctions<
   S extends Store = Store,
-  UAFM extends PayloadTypeMap = PayloadTypeMap,
-  UAFS extends UserActionFunctions<S, UAFM> = UserActionFunctions<S, UAFM>
+  PTM extends PayloadTypeMap = PayloadTypeMap,
+  UAFS extends UserActionFunctions<S, PTM> = UserActionFunctions<S, PTM>
 > = {
   [P in keyof UAFS]: ActionFunction<Parameters<UAFS[P]>[0]['payload']>
 }
@@ -47,8 +47,8 @@ export type DelayedActionFunction<T = any> = (payload: T) => RawDelayedFunction<
 
 export type DelayedActionFunctions<
   S extends Store,
-  UAFM extends PayloadTypeMap,
-  UAFs extends UserActionFunctions<S, UAFM>
+  PTM extends PayloadTypeMap,
+  UAFs extends UserActionFunctions<S, PTM>
 > = {
   [P in keyof UAFs]: DelayedActionFunction<Parameters<UAFs[P]>[0]['payload']>
 }
@@ -73,16 +73,24 @@ export type EpicFunctions<
   [P in keyof UEFs]: EpicFunction<Parameters<UEFs[P]>[0]['payload']>
 }
 
-export type Reducers<S extends Store = Store> = {
+export type GetReducers<S extends Store = Store> = {
   [K in keyof S]: Reducer<S, K>
 }
 
-export type Actions<R extends Reducers = Reducers> = {
+export type GetActions<R extends GetReducers = GetReducers> = {
   [K in keyof R]: R[K]['Actions']
 }
 
-// export type Epics = {
-//   [K: EpicId]: Record<>
+export type GetEpicsMap<S extends Store = Store> = {
+  [K: string]: Epic<S>
+}
+
+export type GetEpics<E extends GetEpicsMap = GetEpicsMap> = {
+  [K in keyof E]: E[K]['Epics']
+}
+
+// {
+//   [K in keyof E[number]['id']]: Extract<E[number], Epic<S, K>>
 // }
 
 export type ChangeListener = ({
@@ -100,19 +108,18 @@ export type ChangeListener = ({
 
 export class Rydux<
   FullStore extends Store,
-  ReducersMap extends Reducers<FullStore> = Reducers<FullStore>,
-  ActionsMap extends Actions<ReducersMap> = Actions<ReducersMap>
+  Reducers extends GetReducers<FullStore> = GetReducers<FullStore>,
+  EpicsMap extends GetEpicsMap<FullStore> = GetEpicsMap<FullStore>,
+  Epics extends GetEpics<EpicsMap> = GetEpics<EpicsMap>,
+  Actions extends GetActions<Reducers> = GetActions<Reducers>
 > {
   #EventEmitter: EE
   #store: FullStore
-  #reducers: ReducersMap
-  #actions: ActionsMap
-
-  #epics: Record<ReducerId, Record<string, EpicFunction<unknown>>>
+  #reducers: Reducers
+  #actions: Actions
+  #epics: Epics
 
   #actionListeners: Map<any, ChangeListener>
-
-  static TYPES: typeof TYPES
 
   constructor(initialState = {} as Partial<FullStore>) {
     if (typeof initialState !== 'object' || initialState.constructor !== {}.constructor) {
@@ -120,10 +127,10 @@ export class Rydux<
     }
 
     this.#actionListeners = new Map()
-    this.#actions = {} as ActionsMap
-    this.#epics = {}
+    this.#actions = {} as Actions
+    this.#epics = {} as Epics
     this.#EventEmitter = new EE()
-    this.#reducers = {} as ReducersMap
+    this.#reducers = {} as Reducers
 
     //add event listener for actions
     this.#EventEmitter.on(EVENTS.ACTION, (action: () => void) => {
@@ -138,7 +145,7 @@ export class Rydux<
     return this
   }
 
-  initReducer<K extends keyof FullStore, R extends ReducersMap[K] = ReducersMap[K]>(
+  initReducer<K extends keyof FullStore, R extends Reducers[K] = Reducers[K]>(
     initialState: FullStore[K],
     reducer: R,
     allowOverride = false
@@ -172,11 +179,11 @@ export class Rydux<
     return reducer
   }
 
-  getReducers(): Partial<ReducersMap> {
+  getReducers(): Partial<Reducers> {
     return this.#reducers
   }
 
-  getReducer<K extends keyof FullStore>(reducerId: K): ReducersMap[K] | undefined {
+  getReducer<K extends keyof FullStore>(reducerId: K): Reducers[K] | undefined {
     return !reducerId ? undefined : this.#reducers[reducerId]
   }
 
@@ -185,9 +192,7 @@ export class Rydux<
       return
     }
 
-    this.#reducers = Object.fromEntries(
-      Object.entries(this.#reducers).filter(([key]) => key !== reducerId)
-    ) as ReducersMap
+    this.#reducers = Object.fromEntries(Object.entries(this.#reducers).filter(([key]) => key !== reducerId)) as Reducers
   }
 
   getEventEmitter(): EE {
@@ -202,15 +207,15 @@ export class Rydux<
     return this.#store[reducerId]
   }
 
-  getActions(): ActionsMap {
+  getActions(): Actions {
     return this.#actions
   }
 
-  getAction<K extends keyof FullStore, AFs extends ActionsMap[K] = ActionsMap[K]>(reducerId: K): AFs | undefined {
+  getAction<K extends keyof FullStore, AFs extends Actions[K] = Actions[K]>(reducerId: K): AFs | undefined {
     return this.#actions[reducerId] as AFs
   }
 
-  getEpics() {
+  getEpics(): Epics {
     return this.#epics
   }
 
@@ -391,7 +396,7 @@ export class Rydux<
     ) as ActionFunctions<FullStore, PTM, UAFs>
   }
 
-  createEpic<T>(epicId: EpicId, epicFunction: UserEpicFunction<FullStore, T>, actionId = '') {
+  createEpic<T>(epicId: keyof Epics, epicFunction: UserEpicFunction<FullStore, T>, actionId = '') {
     if (typeof epicFunction !== 'function') {
       throw new Error(`Epic func must be of type function. Instead got ${typeof epicFunction}`)
     }
@@ -435,7 +440,7 @@ export class Rydux<
       //@ts-ignore
       this.#epics[epicId][actionName] = epic
     } else {
-      throw new Error(`An Epic with the name ${actionName} already exists for reducer ${epicId}`)
+      throw new Error(`An Epic with the name ${actionName} already exists for reducer ${epicId as string}`)
     }
 
     return epic
@@ -444,7 +449,7 @@ export class Rydux<
   createEpics<
     PTM extends PayloadTypeMap,
     UEFs extends UserActionFunctions<FullStore, PTM> = UserActionFunctions<FullStore, PTM>
-  >(epicId: EpicId, epics = {} as UEFs) {
+  >(epicId: keyof Epics, epics = {} as UEFs) {
     if (epicId == null) {
       throw new Error(`You must specify a non-null epicId when creating epics`)
     }
@@ -457,7 +462,7 @@ export class Rydux<
     ) as EpicFunctions<FullStore, PTM, UEFs>
   }
 
-  createDelayedAction<T, K extends keyof FullStore = keyof FullStore>(reducerId: K, actionId: keyof ActionsMap[K]) {
+  createDelayedAction<T, K extends keyof FullStore = keyof FullStore>(reducerId: K, actionId: keyof Actions[K]) {
     const action = this.#actions?.[reducerId]?.[actionId]
 
     if (typeof action !== 'function' || action.type !== TYPES.ACTION) {
@@ -485,13 +490,13 @@ export class Rydux<
     return action(payload)
   }
 
-  callEpic(reducerId: ReducerId, epicId: EpicId, payload: unknown) {
-    const epic = this.#epics?.[reducerId]?.[epicId]
+  callEpic(epicId: keyof Epics, actionId: string, payload: unknown) {
+    const epic = this.#epics?.[epicId]?.[actionId]
 
     if (typeof epic === 'function' && epic.type === TYPES.EPIC) {
       epic(payload)
     } else {
-      console.warn(`The epic ${epicId} is not a function for reducer ${reducerId}`)
+      console.warn(`The epic ${actionId as string} is not a function for reducer ${epicId as string}`)
     }
   }
 
@@ -508,7 +513,5 @@ export class Rydux<
     this.#EventEmitter.emit(EVENTS.UPDATE, this.#store)
   }
 }
-
-Rydux.TYPES = TYPES
 
 export default Rydux

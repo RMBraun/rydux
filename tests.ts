@@ -1,5 +1,6 @@
 import Rydux from './Rydux'
 import Reducer from './Reducer'
+import Epic from './Epic'
 
 type FullStore = {
   login: {
@@ -15,11 +16,21 @@ type FullStore = {
 type LoginReducer = Reducer<FullStore, 'login', { loginAction: number; test: string }>
 type TestStoreReducer = Reducer<FullStore, 'testStore', { testAction2: string }>
 
+type LoginEpic = Epic<FullStore, 'LoginEpic', { superCoolLoginEpic: string; someOtherEpic: number }>
+type TestEpic = Epic<FullStore, 'TestEpic', { someTestEpic: string }>
+
+// type test = TestEpic['Epics']['someTestEpic']
+
 const rydux = new Rydux<
   FullStore,
   {
     login: LoginReducer
     testStore: TestStoreReducer
+  },
+  // [LoginEpic, TestEpic]
+  {
+    ll: LoginEpic
+    tt: TestEpic
   }
 >()
 
@@ -91,11 +102,12 @@ const specificStoreTest = rydux.getStore('login')
 //----- getActions - all actions
 const getActionsTest = rydux.getActions()
 
-//----- getAction = specific actions
+//----- getAction - specific actions
 const specificActionsTest1 = rydux.getAction('login')
 const specificActionsTest2 = rydux.getAction('testStore')
 
-//-----
+//----- getEpics - all epics
+const getEpicsTest = rydux.getEpics()
 
 //-----
 

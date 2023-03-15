@@ -1,7 +1,6 @@
 import type Rydux from './Rydux'
 import {
   type Store,
-  type DelayedActionFunction,
   type RawDelayedFunction,
   type PayloadTypeMap,
   type UserActionFunctions,
