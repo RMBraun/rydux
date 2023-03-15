@@ -13,13 +13,16 @@ type FullStore = {
   }
 }
 
-type LoginReducer = Reducer<FullStore, 'login', { loginAction: number; test: string }>
+//------------
+//  Fake global Rydux declaration
+//------------
+
+// -- fake imports of these types from their respective files
+type LoginReducer = Reducer<FullStore, 'login', { loginAction: number; testAction: string }>
 type TestStoreReducer = Reducer<FullStore, 'testStore', { testAction2: string }>
 
 type LoginEpic = Epic<FullStore, 'LoginEpic', { superCoolLoginEpic: string; someOtherEpic: number }>
 type TestEpic = Epic<FullStore, 'TestEpic', { someTestEpic: string }>
-
-// type test = TestEpic['Epics']['someTestEpic']
 
 const rydux = new Rydux<
   FullStore,
@@ -27,13 +30,12 @@ const rydux = new Rydux<
     login: LoginReducer
     testStore: TestStoreReducer
   },
-  // [LoginEpic, TestEpic]
-  {
-    ll: LoginEpic
-    tt: TestEpic
-  }
+  [LoginEpic, TestEpic]
 >()
 
+//------------
+//  Fake reducer creation
+//------------
 const ID = 'login'
 
 const loginReducer: LoginReducer = new Reducer(
@@ -49,26 +51,26 @@ const loginReducer: LoginReducer = new Reducer(
       console.log(payload)
       store[ID]
     },
-    test: ({ store, payload }) => {
+    testAction: ({ store, payload }) => {
       console.log(payload)
       store[ID]
     },
   }
 )
 
-const Actions = loginReducer.Actions
-const id = loginReducer.id
-const testActions = loginReducer.Actions.test('test')
-
-const ActionFunctions = loginReducer.Actions.loginAction(333)
-const DelayedActionFunctions = loginReducer.DelayedActions.test('test string')
-
-const StoreSlice = loginReducer.getStore()
-const initState = loginReducer.initialState
-
 //------------
 //  tests
 //------------
+
+const Actions = loginReducer.Actions
+const id = loginReducer.id
+const testActions = loginReducer.Actions.testAction('test')
+
+const ActionFunctions = loginReducer.Actions.loginAction(333)
+const DelayedActionFunctions = loginReducer.DelayedActions.testAction('test string')
+
+const StoreSlice = loginReducer.getStore()
+const initState = loginReducer.initialState
 
 //----- getReducers
 const getReducersTest = rydux.getReducers()

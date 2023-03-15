@@ -81,17 +81,11 @@ export type GetActions<R extends GetReducers = GetReducers> = {
   [K in keyof R]: R[K]['Actions']
 }
 
-export type GetEpicsMap<S extends Store = Store> = {
-  [K: string]: Epic<S>
-}
+export type GetEpicsArray<S extends Store = Store> = Array<Epic<S>>
 
-export type GetEpics<E extends GetEpicsMap = GetEpicsMap> = {
-  [K in keyof E]: E[K]['Epics']
+export type GetEpics<E extends GetEpicsArray = GetEpicsArray> = {
+  [K in E[number]['id']]: Extract<E[number], Epic<any, K, any, any>>['Epics']
 }
-
-// {
-//   [K in keyof E[number]['id']]: Extract<E[number], Epic<S, K>>
-// }
 
 export type ChangeListener = ({
   ...props
@@ -107,10 +101,10 @@ export type ChangeListener = ({
 }) => void
 
 export class Rydux<
-  FullStore extends Store,
+  FullStore extends Store = Store,
   Reducers extends GetReducers<FullStore> = GetReducers<FullStore>,
-  EpicsMap extends GetEpicsMap<FullStore> = GetEpicsMap<FullStore>,
-  Epics extends GetEpics<EpicsMap> = GetEpics<EpicsMap>,
+  EpicsArray extends Array<Epic<FullStore>> = any,
+  Epics extends GetEpics<EpicsArray> = GetEpics<EpicsArray>,
   Actions extends GetActions<Reducers> = GetActions<Reducers>
 > {
   #EventEmitter: EE

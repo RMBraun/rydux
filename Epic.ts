@@ -7,17 +7,13 @@ export default class Epic<
   S extends Store = Store,
   I extends EpicId = EpicId,
   PTM extends PayloadTypeMap = PayloadTypeMap,
-  UEFs extends UserEpicFunctions<S, PTM> = UserEpicFunctions<S, PTM>,
-  R extends Rydux<S> = Rydux<S>
+  UEFs extends UserEpicFunctions<S, PTM> = UserEpicFunctions<S, PTM>
 > {
-  Rydux: R
   id: I
   Epics: EpicFunctions<S, PTM, UEFs>
 
-  constructor(rydux: R, epicId: I, epics: UEFs) {
-    if (rydux) {
-      this.Rydux = rydux
-    } else {
+  constructor(rydux: Rydux<S>, epicId: I, epics: UEFs) {
+    if (!rydux) {
       throw new Error('A Rydux instance with matching store must be provided')
     }
 
@@ -31,7 +27,7 @@ export default class Epic<
 
     this.id = epicId
 
-    this.Epics = this.Rydux.createEpics<PTM, UEFs>(this.id as string, epics)
+    this.Epics = rydux.createEpics<PTM, UEFs>(this.id, epics)
 
     return this
   }
