@@ -1,5 +1,5 @@
-import Rydux from './rydux'
-import Reducer from './reducer'
+import Rydux from './Rydux'
+import Reducer from './Reducer'
 
 type FullStore = {
   login: {
@@ -12,7 +12,7 @@ type FullStore = {
   }
 }
 
-type LoginReducer = Reducer<FullStore, 'login', { testAction: number; test: string }>
+type LoginReducer = Reducer<FullStore, 'login', { loginAction: number; test: string }>
 type TestStoreReducer = Reducer<FullStore, 'testStore', { testAction2: string }>
 
 const rydux = new Rydux<
@@ -22,6 +22,7 @@ const rydux = new Rydux<
     testStore: TestStoreReducer
   }
 >()
+
 const ID = 'login'
 
 const loginReducer: LoginReducer = new Reducer(
@@ -33,11 +34,11 @@ const loginReducer: LoginReducer = new Reducer(
     code: '',
   },
   {
-    testAction: (store, payload) => {
+    loginAction: ({ store, payload }) => {
       console.log(payload)
       store[ID]
     },
-    test: (store, payload) => {
+    test: ({ store, payload }) => {
       console.log(payload)
       store[ID]
     },
@@ -48,7 +49,7 @@ const Actions = loginReducer.Actions
 const id = loginReducer.id
 const testActions = loginReducer.Actions.test('test')
 
-const ActionFunctions = loginReducer.Actions.testAction(333)
+const ActionFunctions = loginReducer.Actions.loginAction(333)
 const DelayedActionFunctions = loginReducer.DelayedActions.test('test string')
 
 const StoreSlice = loginReducer.getStore()
@@ -80,8 +81,8 @@ const removeReducerTest = rydux.removeReducer('login')
 //----- getEventEmitter
 const eventEmittersTest = rydux.getEventEmitter()
 
-//----- getStore - full store
-const fullStoreTest = rydux.getStore()
+//----- getStores - full store
+const fullStoreTest = rydux.getStores()
 
 //----- getStore - specific
 
@@ -90,8 +91,9 @@ const specificStoreTest = rydux.getStore('login')
 //----- getActions - all actions
 const getActionsTest = rydux.getActions()
 
-//----- getActions = specific actions
-const specificActionsTest = rydux.getActions('login')
+//----- getAction = specific actions
+const specificActionsTest1 = rydux.getAction('login')
+const specificActionsTest2 = rydux.getAction('testStore')
 
 //-----
 

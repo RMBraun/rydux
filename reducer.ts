@@ -1,40 +1,33 @@
-import Rydux, {
+import type Rydux from './Rydux'
+import {
   type Store,
-  type StoreSlice,
   type DelayedActionFunction,
   type RawDelayedFunction,
-  type UserActionFunctionsMap,
+  type PayloadTypeMap,
   type UserActionFunctions,
   type ActionFunctions,
-} from './rydux'
+  type DelayedActionFunctions,
+} from './Rydux'
 
 export type ReducerId = string
-
-type DelayedActionFunctions<
-  S extends Store,
-  UAFM extends UserActionFunctionsMap,
-  UAFs extends UserActionFunctions<S, UAFM>
-> = {
-  [P in keyof UAFs]: DelayedActionFunction<Parameters<UAFs[P]>[1]>
-}
 
 export default class Reducer<
   S extends Store = Store,
   I extends keyof S = keyof S,
-  UAFM extends UserActionFunctionsMap = UserActionFunctionsMap,
-  UAFs extends UserActionFunctions<S, UAFM> = UserActionFunctions<S, UAFM>,
-  AFs extends ActionFunctions<S, UAFM, UAFs> = ActionFunctions<S, UAFM, UAFs>,
-  DAFs extends DelayedActionFunctions<S, UAFM, UAFs> = DelayedActionFunctions<S, UAFM, UAFs>
+  PTM extends PayloadTypeMap = PayloadTypeMap,
+  UAFs extends UserActionFunctions<S, PTM> = UserActionFunctions<S, PTM>,
+  DAFs extends DelayedActionFunctions<S, PTM, UAFs> = DelayedActionFunctions<S, PTM, UAFs>,
+  R extends Rydux<S> = Rydux<S>
 > {
-  Rydux: Rydux<S>
+  Rydux: R
   initialState: S[I]
   id: I
-  Actions: AFs
+  Actions: ActionFunctions<S, PTM, UAFs>
   DelayedActions: DAFs
 
-  constructor(newRydux: Rydux<S>, reducerId: I, initialState: S[I], actions: UAFs) {
-    if (newRydux) {
-      this.Rydux = newRydux
+  constructor(rydux: R, reducerId: I, initialState: S[I], actions: UAFs) {
+    if (rydux) {
+      this.Rydux = rydux
     } else {
       throw new Error('A Rydux instance with matching store must be provided')
     }
@@ -51,22 +44,21 @@ export default class Reducer<
 
     this.id = reducerId
 
-    this.Actions =
-      this.Rydux.getActions<I, AFs>(this.id) || this.Rydux.createActions<S, UAFM, UAFs, AFs>(this.id, actions)
+    this.Rydux.initReducer(initialState, this)
 
-    this.DelayedActions = (this.Actions &&
-      Object.keys(this.Actions).reduce((acc, actionId: keyof AFs) => {
-        const type = this.Actions[actionId]
-        const delayedAction = this.Rydux.createDelayedAction<UAFM[keyof UAFM]>(this.id as string, actionId as string)
+    this.Actions = this.Rydux.createActions<PTM, UAFs>(this.id, actions)
+
+    this.DelayedActions =
+      this.Actions &&
+      Object.keys(this.Actions).reduce((acc, actionId) => {
+        const delayedAction = this.Rydux.createDelayedAction(this.id, actionId)
 
         if (delayedAction) {
-          acc[actionId] = delayedAction
+          acc[actionId as keyof DAFs] = delayedAction as DAFs[typeof actionId]
         }
 
         return acc
-      }, {} as Record<keyof AFs, DelayedActionFunction<UAFM[keyof UAFM]>>)) as DAFs
-
-    this.Rydux.initReducer(initialState, this)
+      }, {} as DAFs)
 
     return this
   }
