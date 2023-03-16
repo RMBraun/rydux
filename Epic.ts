@@ -1,5 +1,5 @@
-import type Rydux from './boogers'
-import { type EpicFunctions, type UserEpicFunctions, type PayloadTypeMap, type Store } from './boogers'
+import type Rydux from './Rydux'
+import { type EpicFunctions, type UserEpicFunctions, type PayloadTypeMap, type Store } from './Rydux'
 
 export type EpicId = string | number | symbol
 
