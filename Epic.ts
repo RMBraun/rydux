@@ -27,7 +27,7 @@ export default class Epic<
 
     this.id = epicId
 
-    this.Epics = rydux.createEpics<PTM, UEFs>(this.id, epics)
+    this.Epics = rydux.createEpicFunctions<PTM, UEFs>(this.id, epics)
 
     return this
   }
