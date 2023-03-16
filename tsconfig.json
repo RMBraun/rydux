@@ -17,7 +17,7 @@
     "outDir": "dist"
   },
   "files": [
-    "Rydux.ts",
+    "boogers.ts",
     "Reducer.ts",
     "Epic.ts",
     "const.ts",

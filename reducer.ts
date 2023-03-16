@@ -1,4 +1,4 @@
-import type Rydux from './Rydux'
+import type Rydux from './boogers'
 import {
   type Store,
   type RawDelayedFunction,
@@ -6,7 +6,7 @@ import {
   type UserActionFunctions,
   type ActionFunctions,
   type DelayedActionFunctions,
-} from './Rydux'
+} from './boogers'
 
 export type ReducerId = string
 

@@ -1,4 +1,4 @@
-import Rydux from '../Rydux'
+import Rydux from '../boogers'
 import { type LoginReducer } from './login.reducer'
 import { type TestStoreReducer } from './testStore.reducer'
 import { type LoginEpic } from './login.epic'
