@@ -1,21 +1,23 @@
 import EE from 'eventemitter3'
 import { produce } from 'immer'
 import type Reducer from './Reducer'
-import type { ReducerId } from './Reducer'
 import { EVENTS, TYPES } from './const'
-import Epic, { EpicId } from './Epic'
+import type Epic from './Epic'
 
 export type ReactComponentProps = Record<string, unknown>
 
 export type StoreSlice = Record<string, unknown>
 
-export type Store = Record<ReducerId, StoreSlice>
+export type Store = Record<string, StoreSlice>
 
 export type PickerFunction = (store: Store, props?: ReactComponentProps) => Store
 
 export type ChangeListenerFunction = (store: Store) => void
 
 export type ActionId = string
+
+//@todo fix this typing
+export type EpicId = string | number | symbol
 
 export type PayloadTypeMap = Record<ActionId | EpicId, any>
 
@@ -91,7 +93,7 @@ export type ChangeListener = ({
   ...props
 }: {
   id: ActionId
-  reducerId: ReducerId
+  reducerId: string
   type: TYPES
   time: number
   payload: unknown
@@ -480,7 +482,7 @@ export class Rydux<
     actionId: I,
     payload: Parameters<Actions[K][I]>[0]
   ) {
-    const action = this.#actions?.[reducerId]?.[actionId]
+    const action = this.#actions?.[reducerId]?.[actionId as string]
 
     if (typeof action !== 'function' || action.type !== TYPES.ACTION) {
       throw new Error(`The action ${actionId as string} is not a function for reducer ${reducerId as string}`)

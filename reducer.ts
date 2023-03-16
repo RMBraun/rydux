@@ -8,8 +8,6 @@ import {
   type DelayedActionFunctions,
 } from './Rydux'
 
-export type ReducerId = string
-
 export default class Reducer<
   S extends Store = Store,
   I extends keyof S = keyof S,
