@@ -24,7 +24,7 @@ export type PayloadTypeMap = Record<ActionId | EpicId, any>
 export type UserActionFunction<S extends Store, T> = (props: { store: S; payload: T }) => void
 
 export type UserActionFunctions<S extends Store, PTM extends PayloadTypeMap> = {
-  [P in keyof PTM]: UserActionFunction<S, PTM[P]>
+  [P in keyof PTM]-?: UserActionFunction<S, PTM[P]>
 }
 
 export type RawActionFunction<T> = (payload: T, isDelayed?: boolean, isLast?: boolean) => void
@@ -325,6 +325,7 @@ export class Rydux<
     }
 
     const actionName: ActionId = actionFunction.name || actionId
+    const thisRef = this
 
     const rawAction: RawActionFunction<T> = (payload: T, isDelayed = false, isLast = false) => {
       //get new store
@@ -352,8 +353,8 @@ export class Rydux<
       }
     }
 
-    const action: ActionFunction<T> = (...props) => {
-      this.#EventEmitter.emit(EVENTS.ACTION, () => {
+    const action: ActionFunction<T> = function (...props) {
+      thisRef.#EventEmitter.emit(EVENTS.ACTION, () => {
         rawAction(...props)
       })
     }
@@ -400,6 +401,7 @@ export class Rydux<
     }
 
     const actionName = epicFunction.name || actionId
+    const thisRef = this
 
     const rawEpic: RawEpicFunction<T> = async (payload) => {
       const store = this.#store
@@ -417,9 +419,9 @@ export class Rydux<
       await epicFunction({ store, payload })
     }
 
-    const epic: EpicFunction<T> = async (...props) => {
+    const epic: EpicFunction<T> = async function (...props) {
       return new Promise<void>((res) => {
-        this.#EventEmitter.emit(EVENTS.ACTION, async () => {
+        thisRef.#EventEmitter.emit(EVENTS.ACTION, async () => {
           await rawEpic(...props)
           res()
         })

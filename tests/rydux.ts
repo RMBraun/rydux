@@ -6,6 +6,7 @@ import { type TestStoreEpic } from './testStore.epic'
 
 export type FullStore = {
   login: {
+    count: number
     username: string
     password: string
     code: string

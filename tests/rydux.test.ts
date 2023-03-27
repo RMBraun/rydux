@@ -1,17 +1,6 @@
 import Rydux from './rydux'
 import LoginReducer from './login.reducer'
 
-//----- Reducer tests
-const Actions = LoginReducer.Actions
-const id = LoginReducer.id
-const testActions = LoginReducer.Actions.testAction('test')
-
-const ActionFunctions = LoginReducer.Actions.loginAction(333)
-const DelayedActionFunctions = LoginReducer.DelayedActions.testAction('test string')
-
-const StoreSlice = LoginReducer.getStore()
-const initState = LoginReducer.initialState
-
 //----- getReducers
 const getReducersTest = Rydux.getReducers()
 
@@ -21,6 +10,7 @@ const getReducerTest = Rydux.getReducer('login')
 //----- initReducer
 const initReducerTest = Rydux.initReducer(
   {
+    count: 0,
     code: 'test',
     password: 'test',
     username: 'test',
@@ -60,40 +50,3 @@ const specificEpicTest2 = Rydux.getEpic('TestEpic')
 
 //----- callEpic
 const specificEpicTest1Promise = specificEpicTest1?.someOtherEpic(34)
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
-
-//-----
