@@ -4,6 +4,8 @@ import type Reducer from './Reducer'
 import { EVENTS, TYPES } from './const'
 import type Epic from './Epic'
 
+type Key = string | number | symbol
+
 export type ReactComponentProps = Record<string, unknown>
 
 export type StoreSlice = Record<string, unknown>
@@ -14,12 +16,13 @@ export type PickerFunction = (store: Store, props?: ReactComponentProps) => Stor
 
 export type ChangeListenerFunction = (store: Store) => void
 
-export type ActionId = string
+//@todo fix this typing
+export type ActionId = Key
 
 //@todo fix this typing
-export type EpicId = string | number | symbol
+export type EpicId = Key
 
-export type PayloadTypeMap = Record<ActionId | EpicId, any>
+export type PayloadTypeMap = Record<Key, any>
 
 export type UserActionFunction<S extends Store, T> = (props: { store: S; payload: T }) => void
 
@@ -27,23 +30,19 @@ export type UserActionFunctions<S extends Store, PTM extends PayloadTypeMap> = {
   [P in keyof PTM]-?: UserActionFunction<S, PTM[P]>
 }
 
-export type RawActionFunction<T> = (payload: T, isDelayed?: boolean, isLast?: boolean) => void
-
 export type ActionFunction<T> = {
   type?: TYPES.ACTION | TYPES.DELAYED_ACTION
-} & ((...a: Parameters<RawActionFunction<T>>) => ReturnType<RawActionFunction<T>>)
+  (payload: T, isDelayed?: boolean, isLast?: boolean): void
+  (payload?: T | undefined, isDelayed?: boolean, isLast?: boolean): void
+}
 
-export type ActionFunctions<
-  S extends Store = Store,
-  PTM extends PayloadTypeMap = PayloadTypeMap,
-  UAFS extends UserActionFunctions<S, PTM> = UserActionFunctions<S, PTM>
-> = {
-  [P in keyof UAFS]: ActionFunction<Parameters<UAFS[P]>[0]['payload']>
+export type ActionFunctions<PTM extends PayloadTypeMap = PayloadTypeMap> = {
+  [P in keyof PTM]-?: ActionFunction<PTM[P]>
 }
 
 export type RawDelayedFunction<T> = {
   type?: TYPES
-} & ((isLast?: boolean) => ReturnType<RawActionFunction<T>>)
+} & ((isLast?: boolean) => void)
 
 export type DelayedActionFunction<T = any> = (payload: T) => RawDelayedFunction<T>
 
@@ -76,16 +75,16 @@ export type EpicFunctions<
 }
 
 export type GetReducers<S extends Store = Store> = {
-  [K in keyof S]: Reducer<S, K>
+  [K in keyof S]: Reducer<S, keyof S, PayloadTypeMap>
 }
 
-export type GetActions<R extends GetReducers = GetReducers> = {
+export type GetActions<S extends Store = Store, R extends GetReducers<S> = GetReducers<S>> = {
   [K in keyof R]: R[K]['Actions']
 }
 
 export type GetEpicsArray<S extends Store = Store> = Array<Epic<S>>
 
-export type GetEpics<S extends Store = Store, E extends GetEpicsArray = GetEpicsArray> = {
+export type GetEpics<S extends Store = Store, E extends GetEpicsArray<S> = GetEpicsArray<S>> = {
   [K in E[number]['id']]: Extract<E[number], Epic<S, K>>['Epics']
 }
 
@@ -107,7 +106,7 @@ export class Rydux<
   Reducers extends GetReducers<FullStore> = GetReducers<FullStore>,
   EpicsArray extends Array<Epic<FullStore>> = any,
   Epics extends GetEpics<FullStore, EpicsArray> = GetEpics<FullStore, EpicsArray>,
-  Actions extends GetActions<Reducers> = GetActions<Reducers>
+  Actions extends GetActions<FullStore, Reducers> = GetActions<FullStore, Reducers>
 > {
   #EventEmitter: EE
   #store: FullStore
@@ -257,7 +256,7 @@ export class Rydux<
    */
   addActionListeners(
     changeListenerList: Array<{
-      reducerId: keyof Reducer
+      reducerId: keyof Reducers
       ids: keyof Actions | Array<keyof Actions>
       callback: ChangeListener
     }>
@@ -296,7 +295,7 @@ export class Rydux<
           ids: new Set(([] as (keyof Actions)[]).concat(listener.ids).map((id) => id.toString())),
         }))
         .forEach((listener) => {
-          if (info.reducerId === listener.reducerId && listener.ids.has(info.id)) {
+          if (info.reducerId === listener.reducerId && listener.ids.has(info.id as string)) {
             listener.callback(info)
           }
         })
@@ -318,7 +317,7 @@ export class Rydux<
   createAction<T>(
     reducerId: keyof FullStore,
     actionFunction: UserActionFunction<FullStore, T>,
-    actionId = '' as ActionId
+    actionId = '' as string
   ) {
     if (typeof actionFunction !== 'function') {
       throw new Error(`Action function must be of type function. Instead got ${typeof actionFunction}`)
@@ -327,37 +326,32 @@ export class Rydux<
     const actionName: ActionId = actionFunction.name || actionId
     const thisRef = this
 
-    const rawAction: RawActionFunction<T> = (payload: T, isDelayed = false, isLast = false) => {
-      //get new store
-      const newStore = produce(this.#store, (draft: FullStore) => actionFunction({ store: draft, payload }))
-      this.#store = newStore
-
-      //send new action log to listeners
-      this.#EventEmitter.emit(EVENTS.ACTION_LISTENER, {
-        id: actionName,
-        reducerId,
-        type: TYPES.ACTION,
-        time: Date.now(),
-        payload,
-        store: newStore,
-        isDelayed: !!isDelayed,
-        isLast,
-      })
-
-      if (!isDelayed) {
-        //notify everyone
-        this.#EventEmitter.emit(EVENTS.UPDATE, newStore)
-      } else {
-        //return the new store
-        return newStore
-      }
-    }
-
-    const action: ActionFunction<T> = function (...props) {
+    const action = function (payload: T, isDelayed = false, isLast = false) {
       thisRef.#EventEmitter.emit(EVENTS.ACTION, () => {
-        rawAction(...props)
+        //get new store
+        const newStore = produce(thisRef.#store, (draft: FullStore) => actionFunction({ store: draft, payload }))
+
+        //update global store
+        thisRef.#store = newStore
+
+        //send new action log to listeners
+        thisRef.#EventEmitter.emit(EVENTS.ACTION_LISTENER, {
+          id: actionName,
+          reducerId,
+          type: TYPES.ACTION,
+          time: Date.now(),
+          payload,
+          store: newStore,
+          isDelayed: !!isDelayed,
+          isLast,
+        })
+
+        if (!isDelayed) {
+          //notify everyone
+          thisRef.#EventEmitter.emit(EVENTS.UPDATE, newStore)
+        }
       })
-    }
+    } as ActionFunction<T>
 
     //add prototype toString so that it resolves to the actionId
     action.type = TYPES.ACTION
@@ -377,22 +371,21 @@ export class Rydux<
     return action
   }
 
-  createActions<
-    PTM extends PayloadTypeMap,
-    UAFs extends UserActionFunctions<FullStore, PTM> = UserActionFunctions<FullStore, PTM>
-  >(reducerId?: keyof FullStore, actions = {} as UAFs) {
+  createActions<PTM extends PayloadTypeMap>(
+    reducerId?: keyof FullStore,
+    actions = {} as UserActionFunctions<FullStore, PTM>
+  ) {
     if (typeof reducerId !== 'string') {
       throw new Error(`You must specify a non-null String reducerId when creating rydux actions`)
     } else if (actions.constructor.name !== 'Object') {
       throw new Error('actions must be an Object')
     }
 
-    return Object.fromEntries(
-      Object.entries(actions).map(([actionId, func]) => [
-        actionId,
-        this.createAction<PTM[typeof actionId]>(reducerId, func, actionId),
-      ])
-    ) as ActionFunctions<FullStore, PTM, UAFs>
+    return Object.keys(actions).reduce((acc, actionId: keyof PTM) => {
+      acc[actionId] = this.createAction<PTM[typeof actionId]>(reducerId, actions[actionId], actionId as string)
+
+      return acc
+    }, {} as ActionFunctions<PTM>)
   }
 
   createEpicFunction<T>(epicId: keyof Epics, epicFunction: UserEpicFunction<FullStore, T>, actionId = '') {
@@ -470,11 +463,11 @@ export class Rydux<
       return
     }
 
-    const delayedAction: DelayedActionFunction<T> = function (payload: T) {
+    const delayedAction = function (payload: T) {
       const func = (isLast = false) => action(payload, true, isLast)
       func.type = TYPES.DELAYED_ACTION
       return func
-    }
+    } as DelayedActionFunction<T>
 
     return delayedAction
   }

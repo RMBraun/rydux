@@ -9,9 +9,9 @@ import {
 } from './Rydux'
 
 export default class Reducer<
-  S extends Store = Store,
-  I extends keyof S = keyof S,
-  PTM extends PayloadTypeMap = PayloadTypeMap,
+  S extends Store,
+  I extends keyof S,
+  PTM extends PayloadTypeMap,
   UAFs extends UserActionFunctions<S, PTM> = UserActionFunctions<S, PTM>,
   DAFs extends DelayedActionFunctions<S, PTM, UAFs> = DelayedActionFunctions<S, PTM, UAFs>,
   R extends Rydux<S> = Rydux<S>
@@ -19,7 +19,7 @@ export default class Reducer<
   Rydux: R
   initialState: S[I]
   id: I
-  Actions: ActionFunctions<S, PTM, UAFs>
+  Actions: ActionFunctions<PTM>
   DelayedActions: DAFs
 
   constructor(rydux: R, reducerId: I, initialState: S[I], actions: UAFs) {
@@ -43,7 +43,7 @@ export default class Reducer<
 
     this.Rydux.initReducer(initialState, this)
 
-    this.Actions = this.Rydux.createActions<PTM, UAFs>(this.id, actions)
+    this.Actions = this.Rydux.createActions<PTM>(this.id, actions)
 
     this.DelayedActions =
       this.Actions &&

@@ -6,7 +6,7 @@ const ID = 'login'
 export type LoginReducer = Reducer<
   FullStore,
   typeof ID,
-  { loginAction: number; testAction: string; incCount?: number; decCount?: number }
+  { loginAction: number; testAction?: undefined; incCount?: number; decCount?: number }
 >
 
 export const INITIAL_STATE = {
@@ -17,11 +17,11 @@ export const INITIAL_STATE = {
 }
 
 const loginReducer: LoginReducer = new Reducer(rydux, ID, INITIAL_STATE, {
-  decCount: ({ store, payload = 1 }) => {
-    store[ID].count = store[ID].count - payload
+  decCount: ({ store, payload }) => {
+    store[ID].count = store[ID].count - (payload ?? 1)
   },
-  incCount: ({ store, payload = 1 }) => {
-    store[ID].count = store[ID].count + payload
+  incCount: ({ store, payload }) => {
+    store[ID].count = store[ID].count + (payload ?? 1)
   },
   loginAction: ({ payload }) => {
     console.log(payload)
