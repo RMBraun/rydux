@@ -1,5 +1,5 @@
-import type Rydux from './Rydux'
-import { type EpicFunctions, type UserEpicFunctions, type PayloadTypeMap, type Store } from './Rydux'
+import type Rydux from './rydux2'
+import { type EpicFunctions, type UserEpicFunctions, type PayloadTypeMap, type Store } from './rydux2'
 
 export type EpicId = string | number | symbol
 
@@ -10,7 +10,7 @@ export default class Epic<
   UEFs extends UserEpicFunctions<S, PTM> = UserEpicFunctions<S, PTM>
 > {
   id: I
-  Epics: EpicFunctions<S, PTM, UEFs>
+  Epics: EpicFunctions<PTM>
 
   constructor(rydux: Rydux<S>, epicId: I, epics: UEFs) {
     if (!rydux) {
@@ -27,7 +27,7 @@ export default class Epic<
 
     this.id = epicId
 
-    this.Epics = rydux.createEpicFunctions<PTM, UEFs>(this.id, epics)
+    this.Epics = rydux.createEpicFunctions<PTM>(this.id, epics)
 
     return this
   }

@@ -1,5 +1,5 @@
 import { createElement, FC, forwardRef, memo, useEffect, useState } from 'react'
-import RyduxClass, { PickerFunction, ReactComponentProps, ChangeListenerFunction } from './Rydux'
+import RyduxClass, { PickerFunction, ReactComponentProps, ChangeListenerFunction } from './rydux2'
 
 var Rydux: typeof RyduxClass
 
