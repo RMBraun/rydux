@@ -1,22 +1,19 @@
 import { createElement, FC, forwardRef, memo, useEffect, useState } from 'react'
-import RyduxClass, { PickerFunction, ReactComponentProps, ChangeListenerFunction } from './rydux'
+import type Rydux from './rydux'
+import { type PickerFunction, type ReactComponentProps, type ChangeListenerFunction } from './rydux'
 
-var Rydux: typeof RyduxClass
+var ryduxInstance: Rydux
 
-if (typeof window !== 'undefined') {
-  Rydux = window.Rydux
-}
-
-export const bindRedux = (newRedux: typeof RyduxClass) => {
-  Rydux = newRedux
+export const bindRedux = (newRedux: Rydux) => {
+  ryduxInstance = newRedux
 }
 
 export function listen<T extends ReactComponentProps>(pickerFunc: PickerFunction, Component: FC<T>) {
-  if (Rydux == null) {
+  if (ryduxInstance == null) {
     throw new Error("No Redux bound to this listener. Please call 'bindRedux'")
   }
 
-  const { getInitialState, propSelectFunction } = Rydux.initChangeListener(pickerFunc)
+  const { getInitialState, propSelectFunction } = ryduxInstance.initChangeListener(pickerFunc)
 
   //TODO remove memo? This is causing shallow compares to prevent re-rendering
   const MemoizedComponent = memo(Component)
@@ -46,12 +43,12 @@ export function listen<T extends ReactComponentProps>(pickerFunc: PickerFunction
           setState(newState)
         }
 
-        Rydux.addChangeListener(propListener)
+        ryduxInstance.addChangeListener(propListener)
       }
 
       return () => {
         isUnmounted = true
-        Rydux.removeChangeListener(propListener)
+        ryduxInstance.removeChangeListener(propListener)
       }
     }, [])
 
