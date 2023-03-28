@@ -2,7 +2,7 @@ import EE from 'eventemitter3'
 import { produce } from 'immer'
 import type Reducer from './Reducer'
 import { EVENTS, TYPES } from './const'
-import type Epic from './epic2'
+import type Epic from './epic'
 
 type Key = string | number | symbol
 

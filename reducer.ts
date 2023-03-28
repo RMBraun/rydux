@@ -1,4 +1,4 @@
-import type Rydux from './rydux2'
+import type Rydux from './rydux'
 import {
   type Store,
   type RawDelayedFunction,
@@ -6,7 +6,7 @@ import {
   type UserActionFunctions,
   type ActionFunctions,
   type DelayedActionFunctions,
-} from './rydux2'
+} from './rydux'
 
 export default class Reducer<
   S extends Store,
