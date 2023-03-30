@@ -2,7 +2,7 @@ import { createElement, FC, forwardRef, memo, useEffect, useState } from 'react'
 import type Rydux from './rydux'
 import { type PickerFunction, type ReactComponentProps, type ChangeListenerFunction } from './rydux'
 
-var ryduxInstance: Rydux
+let ryduxInstance: Rydux
 
 export const bindRedux = (newRedux: Rydux) => {
   ryduxInstance = newRedux
@@ -18,7 +18,7 @@ export function listen<T extends ReactComponentProps>(pickerFunc: PickerFunction
   //TODO remove memo? This is causing shallow compares to prevent re-rendering
   const MemoizedComponent = memo(Component)
 
-  var isUnmounted = false
+  let isUnmounted = false
 
   return forwardRef<unknown, T>(function ReduxWrapper(props, forwardedRef) {
     const [state, setState] = useState(getInitialState({ ...props }))

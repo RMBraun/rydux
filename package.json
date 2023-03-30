@@ -2,7 +2,7 @@
   "name": "rydux",
   "version": "1.0.0",
   "description": "Simple flux framework for JavaScript and NodeJs",
-  "main": "redux.js",
+  "main": "./dist/index.js",
   "scripts": {
     "tests": "npx ts-node ./tests/global.tests.ts",
     "build": "tsc"

@@ -18,10 +18,11 @@
   },
   "files": [
     "rydux.ts",
-    "Reducer.ts",
+    "reducer.ts",
     "epic.ts",
     "const.ts",
-    "listener.tsx"
+    "listener.ts",
+    "index.tsx"
   ],
   "exclude": [
     "node_modules",

@@ -1,7 +1,5 @@
 import type Rydux from './rydux'
-import { type EpicFunctions, type UserEpicFunctions, type PayloadTypeMap, type Store } from './rydux'
-
-export type EpicId = string | number | symbol
+import { type EpicFunctions, type UserEpicFunctions, type PayloadTypeMap, type Store, type EpicId } from './rydux'
 
 export default class Epic<
   S extends Store = Store,

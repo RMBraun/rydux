@@ -1,6 +1,6 @@
 import EE from 'eventemitter3'
 import { produce } from 'immer'
-import type Reducer from './Reducer'
+import type Reducer from './reducer'
 import { EVENTS, TYPES } from './const'
 import type Epic from './epic'
 
@@ -16,10 +16,8 @@ export type PickerFunction = (store: Store, props?: ReactComponentProps) => Stor
 
 export type ChangeListenerFunction = (store: Store) => void
 
-//@todo fix this typing
 export type ActionId = Key
 
-//@todo fix this typing
 export type EpicId = Key
 
 export type PayloadTypeMap = Record<Key, any>
