@@ -1,4 +1,4 @@
-import { Epic } from '../../epic'
+import { Epic } from 'rydux'
 import rydux, { type FullStore } from './rydux'
 
 const ID = 'LoginEpic'

@@ -1,8 +1,8 @@
 import EE from 'eventemitter3'
 import { produce } from 'immer'
-import type Reducer from './reducer'
+import { type Reducer } from './reducer'
 import { EVENTS, TYPES } from './const'
-import type Epic from './epic'
+import { type Epic } from './epic'
 
 type Key = string | number | symbol
 
@@ -12,9 +12,13 @@ export type StoreSlice = Record<string, unknown>
 
 export type Store = Record<string, StoreSlice>
 
-export type PickerFunction = (store: Store, props?: ReactComponentProps) => Store
+export type PickerFunction<
+  S extends Store = Store,
+  P extends ReactComponentProps = ReactComponentProps,
+  R extends ReactComponentProps = ReactComponentProps
+> = (store: S, props: P) => R
 
-export type ChangeListenerFunction = (store: Store) => void
+export type ChangeListenerFunction<S extends Store = Store> = (store: S) => void
 
 export type ActionId = Key
 
@@ -22,10 +26,13 @@ export type EpicId = Key
 
 export type PayloadTypeMap = Record<Key, any>
 
-export type UserActionFunction<S extends Store, T> = (props: { store: S; payload: T }) => void
+export type UserActionFunction<S extends Store, I extends keyof S, T> = (
+  props: { store: S; slice: S[I] },
+  payload: T
+) => void
 
-export type UserActionFunctions<S extends Store, PTM extends PayloadTypeMap> = {
-  [P in keyof PTM]-?: UserActionFunction<S, PTM[P]>
+export type UserActionFunctions<S extends Store, I extends keyof S, PTM extends PayloadTypeMap> = {
+  [P in keyof PTM]-?: UserActionFunction<S, I, PTM[P]>
 }
 
 export type ActionFunction<T> = {
@@ -96,7 +103,7 @@ export class Rydux<
   FullStore extends Store = Store,
   Reducers extends GetReducers<FullStore> = GetReducers<FullStore>,
   EpicsArray extends Array<Epic<FullStore>> = any,
-  Epics extends GetEpics<FullStore, EpicsArray> = GetEpics<FullStore, EpicsArray>,
+  Epics extends GetEpics<FullStore, EpicsArray> = any,
   Actions extends GetActions<FullStore, Reducers> = GetActions<FullStore, Reducers>
 > {
   #EventEmitter: EE
@@ -104,7 +111,6 @@ export class Rydux<
   #reducers: Reducers
   #actions: Actions
   #epics: Epics
-
   #actionListeners: Map<any, ChangeListener>
 
   constructor(initialState = {} as Partial<FullStore>) {
@@ -209,9 +215,9 @@ export class Rydux<
     return this.#epics[epicId]
   }
 
-  initChangeListener(pickerFunc: PickerFunction = (store) => store) {
-    const propSelectFunction: PickerFunction = (...args) => pickerFunc(...args) ?? {}
-    const getInitialState = (props: ReactComponentProps) => propSelectFunction(this.#store, props)
+  initChangeListener<P extends ReactComponentProps>(pickerFunc: PickerFunction<FullStore, P> = (store) => store) {
+    const propSelectFunction: PickerFunction<FullStore, P> = (...args) => pickerFunc(...args) ?? {}
+    const getInitialState = (props: P) => propSelectFunction(this.#store, props)
 
     return {
       propSelectFunction,
@@ -219,7 +225,7 @@ export class Rydux<
     }
   }
 
-  addChangeListener(changeListener?: ChangeListenerFunction) {
+  addChangeListener(changeListener?: ChangeListenerFunction<FullStore>) {
     if (typeof changeListener !== 'function') {
       throw new Error('Change listener must be of type function')
     }
@@ -227,7 +233,7 @@ export class Rydux<
     this.#EventEmitter.addListener(EVENTS.UPDATE, changeListener)
   }
 
-  removeChangeListener(changeListener?: ChangeListenerFunction) {
+  removeChangeListener(changeListener?: ChangeListenerFunction<FullStore>) {
     this.#EventEmitter.removeListener(EVENTS.UPDATE, changeListener)
   }
 
@@ -307,7 +313,7 @@ export class Rydux<
 
   createAction<T, R extends keyof FullStore = keyof FullStore, A extends keyof Actions[R] = keyof Actions[R]>(
     reducerId: R,
-    actionFunction: UserActionFunction<FullStore, T>,
+    actionFunction: UserActionFunction<FullStore, R, T>,
     actionId: A
   ) {
     if (typeof actionFunction !== 'function') {
@@ -323,7 +329,9 @@ export class Rydux<
     const action = function (payload: T, isDelayed = false, isLast = false) {
       thisRef.#EventEmitter.emit(EVENTS.ACTION, () => {
         //get new store
-        const newStore = produce(thisRef.#store, (draft: FullStore) => actionFunction({ store: draft, payload }))
+        const newStore = produce(thisRef.#store, (draft: FullStore) =>
+          actionFunction({ store: draft, slice: draft[reducerId] }, payload)
+        )
 
         //update global store
         thisRef.#store = newStore
@@ -364,9 +372,9 @@ export class Rydux<
     return action
   }
 
-  createActions<PTM extends PayloadTypeMap>(
-    reducerId?: keyof FullStore,
-    actions = {} as UserActionFunctions<FullStore, PTM>
+  createActions<PTM extends PayloadTypeMap, R extends keyof FullStore = keyof FullStore>(
+    reducerId?: R,
+    actions = {} as UserActionFunctions<FullStore, R, PTM>
   ) {
     if (typeof reducerId !== 'string') {
       throw new Error(`You must specify a non-null String reducerId when creating rydux actions`)
@@ -376,7 +384,7 @@ export class Rydux<
     }
 
     return Object.keys(actions).reduce((acc, actionId: keyof PTM) => {
-      acc[actionId] = this.createAction<PTM[typeof actionId]>(reducerId, actions[actionId], actionId as string)
+      acc[actionId] = this.createAction<PTM[typeof actionId], R>(reducerId, actions[actionId], actionId as string)
 
       return acc
     }, {} as ActionFunctions<PTM>)
@@ -507,5 +515,3 @@ export class Rydux<
     this.#EventEmitter.emit(EVENTS.UPDATE, this.#store)
   }
 }
-
-export default Rydux

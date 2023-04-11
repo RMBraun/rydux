@@ -17,11 +17,6 @@
     "outDir": "dist"
   },
   "files": [
-    "rydux.ts",
-    "reducer.ts",
-    "epic.ts",
-    "const.ts",
-    "listener.ts",
     "index.tsx"
   ],
   "exclude": [

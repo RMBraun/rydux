@@ -1,7 +1,7 @@
-import type Rydux from './rydux'
+import { type Rydux } from './rydux'
 import { type EpicFunctions, type UserEpicFunctions, type PayloadTypeMap, type Store, type EpicId } from './rydux'
 
-export default class Epic<
+export class Epic<
   S extends Store = Store,
   I extends EpicId = EpicId,
   PTM extends PayloadTypeMap = PayloadTypeMap,

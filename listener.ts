@@ -1,61 +1,62 @@
 import { createElement, FC, forwardRef, memo, useEffect, useState } from 'react'
-import type Rydux from './rydux'
-import { type PickerFunction, type ReactComponentProps, type ChangeListenerFunction } from './rydux'
+import { type Rydux } from './rydux'
+import { type PickerFunction, type ReactComponentProps, type ChangeListenerFunction, Store } from './rydux'
 
-let ryduxInstance: Rydux
+export const createListener = <S extends Store, R extends Rydux<S> = Rydux<S>>(rydux: R) => {
+  return function listen<Props extends ReactComponentProps, StoreProps extends ReactComponentProps>(
+    pickerFunc: PickerFunction<S, Props, StoreProps>,
+    Component: FC<Props & StoreProps>
+  ) {
+    if (rydux == null) {
+      throw new Error("No Redux bound to this listener. Please call 'bindRedux'")
+    }
 
-export const bindRedux = (newRedux: Rydux) => {
-  ryduxInstance = newRedux
-}
+    const { getInitialState, propSelectFunction } = rydux.initChangeListener<Props>(pickerFunc)
 
-export function listen<T extends ReactComponentProps>(pickerFunc: PickerFunction, Component: FC<T>) {
-  if (ryduxInstance == null) {
-    throw new Error("No Redux bound to this listener. Please call 'bindRedux'")
-  }
+    //TODO remove memo? This is causing shallow compares to prevent re-rendering
+    const MemoizedComponent = memo(Component as unknown as FC<Props>)
 
-  const { getInitialState, propSelectFunction } = ryduxInstance.initChangeListener(pickerFunc)
+    let isUnmounted = false
 
-  //TODO remove memo? This is causing shallow compares to prevent re-rendering
-  const MemoizedComponent = memo(Component)
+    return forwardRef<unknown, Props>(function ReduxWrapper(props, forwardedRef) {
+      const [state, setState] = useState(getInitialState({ ...props }))
 
-  let isUnmounted = false
+      useEffect(() => {
+        isUnmounted = false
 
-  return forwardRef<unknown, T>(function ReduxWrapper(props, forwardedRef) {
-    const [state, setState] = useState(getInitialState({ ...props }))
+        var propListener: ChangeListenerFunction<S> | undefined =
+          typeof propListener === 'undefined' ? undefined : propListener
 
-    useEffect(() => {
-      isUnmounted = false
+        if (propListener == null) {
+          propListener = (newStore) => {
+            //early abort if the component was unmounted or in the process of unmounting
+            if (isUnmounted) {
+              return
+            }
 
-      var propListener: ChangeListenerFunction | undefined =
-        typeof propListener === 'undefined' ? undefined : propListener
+            //get new state
+            const newState = propSelectFunction(newStore, { ...props })
 
-      if (propListener == null) {
-        propListener = (newStore) => {
-          //early abort if the component was unmounted or in the process of unmounting
-          if (isUnmounted) {
-            return
+            //memo should prevent needless re-renders
+            setState(newState)
           }
 
-          //get new state
-          const newState = propSelectFunction(newStore, { ...props })
-
-          //memo should prevent needless re-renders
-          setState(newState)
+          rydux.addChangeListener(propListener)
         }
 
-        ryduxInstance.addChangeListener(propListener)
-      }
+        return () => {
+          isUnmounted = true
+          rydux.removeChangeListener(propListener)
+        }
+      }, [])
 
-      return () => {
-        isUnmounted = true
-        ryduxInstance.removeChangeListener(propListener)
-      }
-    }, [])
-
-    return createElement(MemoizedComponent, {
-      ref: forwardedRef,
-      ...state,
-      ...props,
+      return createElement(MemoizedComponent, {
+        ref: forwardedRef,
+        ...{
+          ...state,
+          ...props,
+        },
+      })
     })
-  })
+  }
 }

@@ -1,4 +1,4 @@
-import Reducer from '../Reducer'
+import { Reducer } from '../../Reducer'
 import rydux, { type FullStore } from './rydux'
 
 const ID = 'testStore'
