@@ -11,6 +11,8 @@
   "dependencies": {
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
+    "@rybr/rydux": "file:../..",
+    "@rybr/styled-modules": "file:../../../styled-modules",
     "@swc/plugin-emotion": "^2.5.56",
     "@types/node": "18.15.11",
     "@types/react": "18.0.31",

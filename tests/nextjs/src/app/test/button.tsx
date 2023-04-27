@@ -4,11 +4,10 @@ import styles from './button.module.css'
 import listen from '@rydux/listener'
 
 import testReducer from '@rydux/test.reducer'
-import { FullStore } from '@/rydux/rydux'
-// import styled from '@emotion/styled'
+import { FullStore } from '@rydux/rydux'
 
-import { styled } from '../../styled-css-modules'
-import React, { useRef } from 'react'
+import styled from '@styled'
+import React, { CSSProperties, useRef } from 'react'
 
 const MyButton = styled('button', styles.buttonTest, (props: { deg: number; buttonId: number }) => ({
   padding: '10px',
@@ -16,13 +15,13 @@ const MyButton = styled('button', styles.buttonTest, (props: { deg: number; butt
   background: props.buttonId % 2 === 0 ? `hsl(${props.deg.toString()} 100% 50%)` : 'blue',
 }))
 
-const IdAndCountText = styled('p', styles.textTest, (props: { test: string; ooga: string }) => ({
+const IdAndCountText = styled('p', styles.textTest, (props: { test: string; fontSize: string }) => ({
   color: props.test,
-  fontSize: props.ooga,
+  fontSize: props.fontSize,
   textDecoration: 'underline',
 }))
 
-const PlainText = styled('p', styles.textTest)
+const PlainText = styled('p')
 
 const InheritText = styled('p', IdAndCountText, (props: { test2: string }) => ({
   color: props.test2,
@@ -32,6 +31,21 @@ const TestNoProps = styled('p')
 
 const InheritText2 = styled('p', PlainText, (props: { fontStyle: string }) => ({
   fontStyle: props.fontStyle,
+}))
+
+const InheritText3 = styled('p', InheritText)
+
+const InheritText4 = styled('p', [
+  styles.buttonTest,
+  styles.textTest,
+  styles.textTest,
+  styles.textTest,
+  styles.textTest,
+  InheritText3.className,
+])
+
+const TestTest = styled.p(InheritText, (props: { test3: CSSProperties['color'] }) => ({
+  color: props.test3,
 }))
 
 export default listen<{ id: number }, { count: FullStore['test'][number] }>(
@@ -56,29 +70,49 @@ export default listen<{ id: number }, { count: FullStore['test'][number] }>(
           ref={ref}
           css={{
             test: 'magenta',
-            ooga: '16px',
+            fontSize: '16px',
           }}
         >
-          {`This is button ${id} - ${count}`}
+          {`IdAndCountText ${id} - ${count}`}
         </IdAndCountText>
         <InheritText
           css={{
             test: 'cyan',
             test2: 'green',
-            ooga: '30px',
+            fontSize: '30px',
           }}
           className={styles.textCustom}
         >
-          {'test'}
+          {'InheritText'}
         </InheritText>
+        <TestTest
+          css={{
+            test: 'yellow',
+            test2: 'brown',
+            test3: 'lightblue',
+            fontSize: '16px',
+          }}
+        >
+          {'InheritedText with wrapper'}
+        </TestTest>
         <InheritText2
           css={{
             fontStyle: 'italic',
           }}
         >
-          {'should be italic'}
+          {'InheritText2 - italic'}
         </InheritText2>
-        <TestNoProps>{'no props test'}</TestNoProps>
+        <TestNoProps>{'TestNoProps - no props test'}</TestNoProps>
+        <InheritText3
+          css={{
+            fontSize: count + 'px',
+            test: 'purple',
+            test2: 'violet',
+          }}
+        >
+          {'InheritText3'}
+        </InheritText3>
+        <InheritText4>{'InheritText4'}</InheritText4>
       </MyButton>
     )
   }

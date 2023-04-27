@@ -1,8 +1,11 @@
 {
-  "name": "rydux",
+  "name": "@rybr/rydux",
   "version": "1.0.0",
   "description": "Simple flux framework for JavaScript and NodeJs",
   "main": "./dist/index.js",
+  "files": [
+    "./dist"
+  ],
   "scripts": {
     "tests": "npx ts-node ./tests/global.tests.ts",
     "build": "tsc"

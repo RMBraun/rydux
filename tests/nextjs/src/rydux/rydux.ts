@@ -1,4 +1,4 @@
-import { Rydux } from 'rydux'
+import { Rydux } from '@rybr/rydux'
 import { type TestReducer } from './test.reducer'
 import { type LoginEpic } from './login.epic'
 

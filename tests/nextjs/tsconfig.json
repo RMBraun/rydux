@@ -29,6 +29,9 @@
       ],
       "@rydux/*": [
         "./src/rydux/*"
+      ],
+      "@styled": [
+        "./src/styled-css-modules/index.ts"
       ]
     }
   },
