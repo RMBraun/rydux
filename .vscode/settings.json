@@ -5,5 +5,7 @@
     "Rydux",
     "UAFs",
     "UEFs"
-  ]
+  ],
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.tsdk": "/Users/ryanbraun/dev/rybr/rydux/tests/nextjs/node_modules/typescript/lib"
 }
