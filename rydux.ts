@@ -16,7 +16,14 @@ export type PickerFunction<
   S extends Store = Store,
   P extends ReactComponentProps = ReactComponentProps,
   R extends ReactComponentProps = ReactComponentProps
-> = (store: S, props: P) => R
+> = (
+  store: {
+    [K in keyof S]: {
+      [J in keyof S[K]]: S[K][J]
+    } & {}
+  } & {},
+  props: P
+) => R
 
 export type ChangeListenerFunction<S extends Store = Store> = (store: S) => void
 

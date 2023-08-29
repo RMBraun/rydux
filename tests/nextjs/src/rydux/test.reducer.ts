@@ -24,7 +24,7 @@ const testReducer: TestReducer = new Reducer(rydux, ID, INITIAL_STATE, {
     slice[Math.min(99, id + 1)] = slice[Math.min(99, id + 1)] - (offset ?? 1)
   },
   incCount: ({ slice }, { id, offset }) => {
-    slice[id] = slice[id] + (offset ?? 1)
+    // slice[id] = slice[id] + (offset ?? 1)
 
     //adjust adjacent
     slice[Math.max(0, id - 1)] = slice[Math.max(0, id - 1)] + (offset ?? 1)

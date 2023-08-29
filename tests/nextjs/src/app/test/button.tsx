@@ -6,19 +6,20 @@ import listen from '@rydux/listener'
 import testReducer from '@rydux/test.reducer'
 import { FullStore } from '@rydux/rydux'
 
-import styled from '@styled'
+import styled from '@styled/index2'
 import React, { CSSProperties, useRef } from 'react'
-import css from 'styled-jsx/css'
 
-const MyButton = styled.button(styles.buttonTest, (props: { deg: number; buttonId: number }) => ({
+const BaseButton = styled.button()
+
+const MyButton = styled(BaseButton).$<{ deg: number; buttonId: number }>(styles.buttonTest, (props) => ({
   background:
     props.buttonId % 2 === 0
-      ? `hsl(${props.deg.toString()} 100% 50%)`
-      : `hsl(${(props.deg * 1.5).toString()} 100% 50%)`,
+      ? `hsl(${(props.deg + 50).toString()} 100% 50%)`
+      : `hsl(${(props.deg * 2).toString()} 100% 50%)`,
   _position: 'relative',
 }))
 
-const IdAndCountText = styled.p(styles.textTest, (props: { test: string; fontSize: string }) => ({
+const IdAndCountText = styled.p<{ test: string; fontSize: string }>(styles.textTest, (props) => ({
   color: props.test,
   fontSize: props.fontSize,
   textDecoration: 'underline',
@@ -26,18 +27,18 @@ const IdAndCountText = styled.p(styles.textTest, (props: { test: string; fontSiz
 
 const PlainText = styled.p()
 
-const InheritText = styled.p(IdAndCountText, (props: { test2: string }) => ({
-  color: props.test2,
+const InheritText = styled(IdAndCountText).p<{ test2: string }>(null, ({ test2 }) => ({
+  color: test2,
 }))
 
 const TestNoProps = styled.p()
 
-const InheritText2 = styled.p(PlainText, (props: { fontStyle: string }) => ({
+const InheritText2 = styled(PlainText).p<{ fontStyle: string }>(null, (props) => ({
   fontStyle: props.fontStyle,
   _color: 'darkred',
 }))
 
-const InheritText3 = styled.p(InheritText)
+const InheritText3 = styled(InheritText).p()
 
 const InheritText4 = styled.p([
   styles.buttonTest,
@@ -48,28 +49,54 @@ const InheritText4 = styled.p([
   InheritText3.className,
 ])
 
-const TestTest = styled.p(InheritText, (props: { test3: CSSProperties['color'] }) => ({
-  color: props.test3,
+const TestTest = styled(InheritText).p<{ test3: CSSProperties['color'] }>(null, ({ test3 }) => ({
+  color: test3,
   position: 'relative',
 }))
 
 const FartTag = styled.fart(styles.textTest)
 
-const AnimatedText = styled.p(styles.text, (props: { speed: number }) => ({
-  animation: `${styles.textAnimation} ${500 * (props.speed ?? 1)}ms ease infinite`,
+const AnimatedText = styled.p<{ speed: number }>(styles.text, ({ speed }) => ({
+  animation: `${styles.textAnimation} ${500 * (speed ?? 1)}ms ease infinite`,
   textDecoration: 'underline',
 }))
 
-const VariableText = styled.p(styles.variableText, (props: { color: CSSProperties['color'] }) => ({
-  color: props.color,
+const VariableText = styled.p<{ color: CSSProperties['color'] }>(styles.variableText, ({ color }) => ({
+  color,
   poop: 'test',
 }))
 
-console.log(css`
-  height: 4px;
-  width: 10px;
-  color: blue;
-`)
+const CustomTag = styled.oogaBooga<{ test: string }>('className', ({ test }) => ({}))
+
+const CustomFunction: React.FC<{ ooga: string }> = (props) => {
+  console.log(props)
+  return <div>{props.ooga}</div>
+}
+
+const TestP = styled.p<{ test?: number }>('someClass', ({ test }) => ({
+  background: test,
+}))
+
+const ExtendsTestP = styled(TestP).$<{ booga?: number }>('someOtherClass', ({ booga, test }) => ({
+  height: booga,
+}))
+
+const DoubleExtendsTest = styled(ExtendsTestP).$<{ bob: string }>('lastClass', ({ bob, booga, test }) => ({
+  color: bob,
+}))
+
+const TestFunc = () => {
+  return (
+    <>
+      <TestP $test={4}>{'TestP'}</TestP>
+      <ExtendsTestP $test={4}>{'ExtendsTestP'}</ExtendsTestP>
+      <DoubleExtendsTest $bob={'blue'} $test={4}>
+        {'DoubleExtendsTest'}
+      </DoubleExtendsTest>
+      {/* <CustomTag $test='string'>{'CustomTag'}</CustomTag> */}
+    </>
+  )
+}
 
 export default listen<{ id: number }, { count: FullStore['test'][number] }>(
   (store, { id }) => ({ count: store.test[id] }),
@@ -80,78 +107,33 @@ export default listen<{ id: number }, { count: FullStore['test'][number] }>(
 
     return (
       <MyButton
-        css={{
-          buttonId: id,
-          deg: (count * 10) % 360,
-        }}
+        $buttonId={id}
+        $deg={(count * 10) % 360}
         onClick={() => {
           console.log('test', id)
           testReducer.Actions.incCount({ id })
         }}
       >
-        <IdAndCountText
-          ref={ref}
-          css={{
-            test: 'magenta',
-            fontSize: '16px',
-          }}
-        >
+        <TestFunc />
+        <IdAndCountText ref={ref} $test={'magenta'} $fontSize={'16px'}>
           {`IdAndCountText ${id} - ${count}`}
         </IdAndCountText>
-        <InheritText
-          css={{
-            test: 'cyan',
-            test2: 'green',
-            fontSize: '30px',
-          }}
-          className={styles.textCustom}
-        >
+        <InheritText $test={'cyan'} $test2={'green'} $fontSize={'30px'} className={styles.textCustom}>
           {'InheritText'}
         </InheritText>
-        <TestTest
-          css={{
-            test: 'yellow',
-            test2: 'brown',
-            test3: 'lightblue',
-            fontSize: '16px',
-          }}
-        >
+        <TestTest $test={'yellow'} $test2={'brown'} $test3={'lightblue'} $fontSize={'16px'}>
           {'InheritedText with wrapper'}
         </TestTest>
-        <InheritText2
-          css={{
-            fontStyle: 'italic',
-          }}
-        >
-          {'InheritText2 - italic'}
-        </InheritText2>
+        <InheritText2 $fontStyle={'italic'}>{'InheritText2 - italic'}</InheritText2>
         <TestNoProps>{'TestNoProps - no props test'}</TestNoProps>
-        <InheritText3
-          css={{
-            fontSize: count + 'px',
-            test: 'purple',
-            test2: 'violet',
-          }}
-        >
+        <InheritText3 $fontSize={count + 'px'} $test={'purple'} $test2={'violet'}>
           {'InheritText3'}
         </InheritText3>
         <InheritText4>{'InheritText4'}</InheritText4>
-        <FartTag>{'Fart Tag'}</FartTag>
-        <AnimatedText
-          css={{
-            speed: id % 10,
-          }}
-        >
-          {'ANIMATED'}
-        </AnimatedText>
-        <VariableText
-          css={{
-            color: 'yellow',
-          }}
-        >
-          {'this is some variable text'}
-        </VariableText>
-        <VariableText css={{ color: 'turquoise' }}>{'this is MORE variable text'}</VariableText>
+        {/* <FartTag>{'Fart Tag'}</FartTag> */}
+        <AnimatedText $speed={id % 10}>{'ANIMATED'}</AnimatedText>
+        <VariableText $color={'yellow'}>{'this is some variable text'}</VariableText>
+        <VariableText $color={'turquoise'}>{'this is MORE variable text'}</VariableText>
       </MyButton>
     )
   }

@@ -14,6 +14,7 @@ export default function Test() {
           <Button key={id} id={id} />
         ))}
       </div>
+      <p>{'other text'}</p>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES5",
+    "target": "ES6",
     "lib": [
       "dom",
       "dom.iterable",
@@ -35,6 +35,9 @@
       ],
       "@styled": [
         "./src/styled-css-modules/index.ts"
+      ],
+      "@styled/*": [
+        "./src/styled-css-modules/*"
       ]
     }
   },
