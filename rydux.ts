@@ -425,9 +425,9 @@ export class Rydux<
             store: thisRef.#store,
           })
 
-          await epicFunction({ store: thisRef.#store, payload })
+          const result = await epicFunction({ store: thisRef.#store, payload })
 
-          res()
+          res(result)
         })
       })
     } as EpicFunction<T>
@@ -458,7 +458,7 @@ export class Rydux<
     }
 
     return Object.keys(epics).reduce((acc, actionId: keyof PTM) => {
-      acc[epicId] = this.createEpicFunction<PTM[typeof actionId]>(epicId, epics[actionId], actionId as string)
+      acc[actionId] = this.createEpicFunction<PTM[typeof epicId]>(epicId, epics[actionId], actionId)
 
       return acc
     }, {} as EpicFunctions<PTM>)
