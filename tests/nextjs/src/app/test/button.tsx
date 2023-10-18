@@ -6,8 +6,9 @@ import listen from '@rydux/listener'
 import testReducer from '@rydux/test.reducer'
 import { FullStore } from '@rydux/rydux'
 
-import styled from '@styled/index2'
-import React, { CSSProperties, useRef } from 'react'
+import { styled } from '@rybr/styled-modules'
+import React, { CSSProperties, useContext, useRef } from 'react'
+import { useTheme } from '@/styled-css-modules/theme'
 
 const BaseButton = styled.button()
 
@@ -69,7 +70,6 @@ const VariableText = styled.p<{ color: CSSProperties['color'] }>(styles.variable
 const CustomTag = styled.oogaBooga<{ test: string }>('className', ({ test }) => ({}))
 
 const CustomFunction: React.FC<{ ooga: string }> = (props) => {
-  console.log(props)
   return <div>{props.ooga}</div>
 }
 
@@ -101,16 +101,16 @@ const TestFunc = () => {
 export default listen<{ id: number }, { count: FullStore['test'][number] }>(
   (store, { id }) => ({ count: store.test[id] }),
   function Tile({ id, count }) {
-    console.log(`rendering ${id}`)
-
     const ref = useRef<HTMLParagraphElement>(null)
+
+    const { css, themeId, setThemeId } = useTheme()
 
     return (
       <MyButton
         $buttonId={id}
         $deg={(count * 10) % 360}
         onClick={() => {
-          console.log('test', id)
+          setThemeId(themeId === 'light' ? 'dark' : 'light')
           testReducer.Actions.incCount({ id })
         }}
       >
@@ -118,7 +118,7 @@ export default listen<{ id: number }, { count: FullStore['test'][number] }>(
         <IdAndCountText ref={ref} $test={'magenta'} $fontSize={'16px'}>
           {`IdAndCountText ${id} - ${count}`}
         </IdAndCountText>
-        <InheritText $test={'cyan'} $test2={'green'} $fontSize={'30px'} className={styles.textCustom}>
+        <InheritText $test={'cyan'} $test2={'var(--test)'} $fontSize={'30px'} className={styles.textCustom}>
           {'InheritText'}
         </InheritText>
         <TestTest $test={'yellow'} $test2={'brown'} $test3={'lightblue'} $fontSize={'16px'}>

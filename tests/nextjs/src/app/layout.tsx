@@ -1,4 +1,6 @@
+import React from 'react'
 import './globals.css'
+import { RenderThemeStylesheet, ThemeProvider } from '@/styled-css-modules/theme'
 
 export const metadata = {
   title: 'Create Next App',
@@ -8,7 +10,12 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang='en'>
-      <body>{children}</body>
+      <ThemeProvider>
+        <head>
+          <RenderThemeStylesheet />
+        </head>
+        <body>{children}</body>
+      </ThemeProvider>
     </html>
   )
 }

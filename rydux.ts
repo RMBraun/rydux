@@ -1,6 +1,6 @@
 import EE from 'eventemitter3'
 import { produce } from 'immer'
-import { type Reducer } from './reducer'
+import { Reducer } from './reducer'
 import { EVENTS, TYPES } from './const'
 import { type Epic } from './epic'
 
@@ -151,7 +151,7 @@ export class Rydux<
   ): R {
     const reducerId = reducer?.id as K
 
-    if (reducer?.constructor?.name !== 'Reducer') {
+    if (!(reducer instanceof Reducer)) {
       throw new Error('Invalid Reducer. Must be of type Reducer with a valid non-empty ID attribute')
     }
 
