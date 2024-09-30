@@ -14,7 +14,8 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "declaration": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "jsx": "react-jsx"
   },
   "files": [
     "index.ts",
