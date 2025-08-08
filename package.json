@@ -1,7 +1,7 @@
 {
   "name": "@rybr/rydux",
   "version": "2.0.0",
-  "description": "Simple flux framework React",
+  "description": "Simple flux framework for JavaScript, React, NextJs, and NodeJs",
   "main": "./dist/index.js",
   "files": [
     "./dist"
@@ -28,15 +28,15 @@
   },
   "homepage": "https://github.com/RMBraun/rydux#readme",
   "dependencies": {
+    "immer": "^10.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "eventemitter3": "5.0.1",
-    "immer": "10.1.1",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "tsx": "4.19.0"
+    "tsx": "^4.19.0"
   },
   "devDependencies": {
-    "@types/node": "22.5.4",
-    "@types/react": "18.3.5",
-    "typescript": "5.6.2"
+    "@types/node": "^22.15.29",
+    "@types/react": "^18.3.5",
+    "typescript": "^5.8.3"
   }
 }

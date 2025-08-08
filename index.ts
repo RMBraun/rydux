@@ -1,1 +1,1 @@
-export { createReducer } from './rydux'
+export * from './rydux'

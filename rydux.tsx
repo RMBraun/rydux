@@ -1,92 +1,127 @@
 'use client'
 
-import { Draft, Immutable, produce } from 'immer'
-import React, { type PropsWithChildren, useContext, useMemo, useState, useRef } from 'react'
+import { Draft, produce } from 'immer'
+import { GlobalStore, SliceState } from './global-store'
+import { WINDOW_GLOBAL_RYDUX_KEY } from './constants'
+import { EventEmitter } from './event-emitter'
+import { PropsWithChildren, useEffect, useRef, useState } from 'react'
+import { shallowCompareAreEqual } from './utils'
+import React from 'react'
 
-type Action<S> = (store: Draft<S>, value?: any) => void
+export class Rydux {
+  static #instance: Rydux
 
-const toImmutable = <T extends unknown>(input: T): Immutable<T> => produce<T>(input, () => {}) as Immutable<T>
+  static #getInstance() {
+    if (!Rydux.#instance) {
+      Rydux.#instance = typeof window !== 'undefined' ? (window[WINDOW_GLOBAL_RYDUX_KEY] = new Rydux()) : new Rydux()
+    }
 
-const shallowCompareAreEqual = <O extends object>(newObj: O, oldObj: O) =>
-  !(Object.keys(newObj) as Array<keyof O>).some((key) => newObj[key] !== oldObj[key])
-
-export const createReducer = <
-  S extends Record<string, unknown>,
-  A extends Record<string, Action<S>>,
-  Actions extends {
-    [k in keyof A]: Parameters<A[k]>[1] extends undefined ? () => void : (value: Parameters<A[k]>[1]) => void
-  }
->(props: {
-  defaultStore: S
-  actions: A
-}) => {
-  const context = React.createContext(
-    toImmutable({
-      store: props.defaultStore,
-      actions: props.actions as unknown as Actions,
-    })
-  )
-
-  const StoreProvider: React.FC<PropsWithChildren<{ store?: S }>> = ({ store: defaultStore, children }) => {
-    const [store, setStore] = useState(defaultStore ?? props.defaultStore)
-
-    const actions = useMemo(
-      () =>
-        Object.fromEntries(
-          Object.entries(props.actions).map(([key, action]) => [
-            key,
-            (value) => setStore(produce<S>((draft) => action(draft, value))),
-          ])
-        ) as Actions,
-      []
-    )
-
-    const value = useMemo(
-      () =>
-        toImmutable({
-          store,
-          actions,
-        }),
-      [store]
-    )
-
-    return <context.Provider value={value}>{children}</context.Provider>
+    return Rydux.#instance
   }
 
-  // React context wrapper
-  const useStore = <R extends object>(
-    sliceFunction: (store: Immutable<S>) => Immutable<R> = (s) => s as unknown as Immutable<R>
-  ) => {
-    const Context = useContext(context)
-    const oldSlice = useRef(Context.store as unknown as Immutable<R>)
+  static dispatch(key: string, slice: SliceState) {
+    EventEmitter.dispatch(key, slice)
+  }
 
-    const slice = useMemo(() => {
-      const newSlice = sliceFunction(Context.store)
-      const areEqual = shallowCompareAreEqual(newSlice, oldSlice.current)
+  static createReducer<
+    Key extends string,
+    Slice extends SliceState,
+    ReducerActions extends Record<string, (slice: Draft<Slice>, value?: any) => void>
+  >(
+    key: Key,
+    props: {
+      defaultState: Slice
+      actions: ReducerActions
+    }
+  ) {
+    {
+      GlobalStore.createSlice(key, props.defaultState)
 
-      if (areEqual) {
-        console.log('are equal', newSlice, oldSlice.current)
-        return oldSlice.current
-      } else {
-        console.log('not equal', newSlice, oldSlice.current)
+      const actions = Object.fromEntries(
+        Object.entries(props.actions).map(([actionName, action]) => [
+          actionName,
+          (value: unknown) => {
+            const slice = GlobalStore.getSlice<Slice>(key)
+            const newSlice = produce<Slice>(slice, (draft) => action(draft, value))
 
-        oldSlice.current = newSlice
-        return oldSlice.current
+            GlobalStore.replaceSlice(key, newSlice)
+
+            EventEmitter.dispatch(key, newSlice)
+          },
+        ])
+      ) as {
+        [k in keyof ReducerActions]: Parameters<ReducerActions[k]>[1] extends undefined
+          ? () => void
+          : undefined extends Parameters<ReducerActions[k]>[1]
+          ? (value?: Parameters<ReducerActions[k]>[1]) => void
+          : (value: Parameters<ReducerActions[k]>[1]) => void
       }
-    }, [Context.store])
 
-    return useMemo(
-      () => ({
-        ...Context,
-        slice,
-      }),
-      [slice]
-    )
-  }
+      const getSlice = () => {
+        return GlobalStore.getSlice<Slice>(key)
+      }
 
-  return {
-    context,
-    StoreProvider,
-    useStore,
+      const UpdateSliceState: React.FC<PropsWithChildren<{ state: Slice; replace?: boolean }>> = ({
+        state,
+        replace = false,
+        children,
+      }) => {
+        const hasRun = useRef(false)
+
+        if (!hasRun.current) {
+          hasRun.current = true
+
+          if (GlobalStore.hasSlice(key)) {
+            if (replace) {
+              GlobalStore.replaceSlice(key, state)
+            } else {
+              GlobalStore.mergeSlice(key, state)
+            }
+          } else {
+            GlobalStore.createSlice(key, state)
+          }
+        }
+
+        return <>{children}</>
+      }
+
+      const useSlice = <R extends unknown = Slice>(
+        pickFunction: (slice: Slice) => R = (slice: Slice) => slice as unknown as R
+      ) => {
+        const [state, setState] = useState(() => pickFunction(GlobalStore.getSlice<Slice>(key)))
+
+        useEffect(() => {
+          const handleUpdate = (newSlice: Slice) => {
+            setState((prevState) => {
+              const newState = pickFunction(newSlice)
+
+              if (shallowCompareAreEqual(newState, prevState)) {
+                return prevState
+              }
+
+              return newState
+            })
+          }
+
+          EventEmitter.on(key, handleUpdate)
+
+          return () => {
+            EventEmitter.off(key, handleUpdate)
+          }
+        }, [setState])
+
+        return state
+      }
+
+      return {
+        Reducer: {
+          key,
+          actions,
+        },
+        UpdateSliceState,
+        useSlice,
+        getSlice,
+      }
+    }
   }
 }

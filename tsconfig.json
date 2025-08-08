@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
-    "target": "ES6",
+    "target": "es6",
     "lib": [
       "DOM",
       "ESNext",
     ],
+    "jsx": "react",
     "esModuleInterop": true,
-    "allowJs": true,
+    "allowJs": false,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "CommonJS",
@@ -14,17 +15,20 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "declaration": true,
-    "outDir": "dist",
-    "jsx": "react-jsx"
+    "outDir": "dist"
   },
-  "files": [
+  "include": [
     "index.ts",
+    "types.d.ts",
+    "rydux.tsx",
+    "rydux-context.tsx",
+    "global-store.ts",
+    "event-emitter.ts",
+    "constants.ts",
+    "utils.ts",
   ],
   "exclude": [
     "node_modules",
-  ],
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node",
-  }
+    "tests",
+  ]
 }
