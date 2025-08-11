@@ -7,12 +7,14 @@ export type Store = Record<string, SliceState>
 
 export class GlobalStore {
   static #instance: GlobalStore
-  #globalStore: Store = {}
+  store: Store = toImmutable({})
 
   static #getInstance() {
     if (!GlobalStore.#instance) {
       GlobalStore.#instance =
-        typeof window !== 'undefined' ? (window[WINDOW_GLOBAL_STORE_KEY] = new GlobalStore()) : new GlobalStore()
+        typeof window !== 'undefined'
+          ? (window[WINDOW_GLOBAL_STORE_KEY] = new GlobalStore())
+          : (global[WINDOW_GLOBAL_STORE_KEY] = new GlobalStore())
     }
 
     return GlobalStore.#instance
@@ -20,44 +22,48 @@ export class GlobalStore {
 
   static hasSlice(key: string) {
     const globalStore = GlobalStore.#getInstance()
-    return key in globalStore.#globalStore
+    return key in globalStore.store
   }
 
   static createSlice<S extends SliceState>(key: string, slice: S) {
     const globalStore = GlobalStore.#getInstance()
 
-    if (!(key in globalStore.#globalStore)) {
-      globalStore.#globalStore[key] = toImmutable(slice)
+    if (!(key in globalStore.store)) {
+      globalStore.store = produce(globalStore.store, (draft) => {
+        draft[key] = slice
+      })
     }
 
-    return globalStore.#globalStore[key] as S
+    return globalStore.store[key] as S
   }
 
   static getSlice<S extends SliceState>(key: string): S {
     const globalStore = GlobalStore.#getInstance()
 
-    if (!(key in globalStore.#globalStore)) {
+    if (!(key in globalStore.store)) {
       throw new Error(`Slice with key "${key}" does not exist in the global store.`)
     }
 
-    return globalStore.#globalStore[key] as S
+    return globalStore.store[key] as S
   }
 
   static replaceSlice<S extends SliceState>(key: string, slice: S) {
     const globalStore = GlobalStore.#getInstance()
 
-    globalStore.#globalStore[key] = toImmutable(slice)
-
-    return globalStore.#globalStore[key] as S
-  }
-
-  static mergeSlice<S extends SliceState>(key: string, slice: S) {
-    const globalStore = GlobalStore.#getInstance()
-
-    globalStore.#globalStore[key] = produce(globalStore.#globalStore[key] ?? slice, (draft) => {
-      Object.assign(draft, slice)
+    globalStore.store = produce(globalStore.store, (draft) => {
+      draft[key] = slice
     })
 
-    return globalStore.#globalStore[key] as S
+    return globalStore.store[key] as S
+  }
+
+  static updateSlice<S extends SliceState>(key: string, slice: S) {
+    const globalStore = GlobalStore.#getInstance()
+
+    globalStore.store = produce(globalStore.store, (draft) => {
+      draft[key] = Object.assign(draft[key], slice)
+    })
+
+    return globalStore.store[key] as S
   }
 }

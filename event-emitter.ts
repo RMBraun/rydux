@@ -1,5 +1,5 @@
-import { WINDOW_GLOBAL_EE_KEY, WINDOW_GLOBAL_EVENT_EMITTER_KEY } from './constants'
 import EE from 'eventemitter3'
+import { WINDOW_GLOBAL_EE_KEY, WINDOW_GLOBAL_EVENT_EMITTER_KEY } from './constants'
 import { SliceState } from './global-store'
 
 export class EventEmitter {
@@ -11,12 +11,14 @@ export class EventEmitter {
       EventEmitter.#instance =
         typeof window !== 'undefined'
           ? (window[WINDOW_GLOBAL_EVENT_EMITTER_KEY] = new EventEmitter())
-          : new EventEmitter()
+          : (global[WINDOW_GLOBAL_EVENT_EMITTER_KEY] = new EventEmitter())
     }
 
     if (!EventEmitter.#instance.#eventEmitter) {
       EventEmitter.#instance.#eventEmitter =
-        typeof window !== 'undefined' ? (window[WINDOW_GLOBAL_EE_KEY] = new EE()) : new EE()
+        typeof window !== 'undefined'
+          ? (window[WINDOW_GLOBAL_EE_KEY] = new EE())
+          : (global[WINDOW_GLOBAL_EE_KEY] = new EE())
     }
 
     return EventEmitter.#instance

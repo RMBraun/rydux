@@ -40,3 +40,14 @@ a {
     color-scheme: dark;
   }
 }
+
+.container {
+  padding: 1rem;
+  border: 1px solid white;
+}
+
+.title {
+  padding: 0 0 1rem 0;
+  border-bottom: 1px solid white;
+  margin-bottom: 1rem;
+}

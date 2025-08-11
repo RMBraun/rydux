@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "tests": "tsx ./tests/unit-tests/global.tests.ts",
-    "build": "rm -rf dist && tsc"
+    "format": "prettier --write .",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -31,12 +32,15 @@
     "immer": "^10.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "eventemitter3": "5.0.1",
-    "tsx": "^4.19.0"
+    "server-only": "^0.0.1",
+    "eventemitter3": "5.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.15.29",
     "@types/react": "^18.3.5",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "prettier": "3.6.2",
+    "prettier-plugin-organize-imports": "4.2.0",
+    "tsx": "^4.19.0"
   }
 }

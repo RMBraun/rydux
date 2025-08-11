@@ -11,3 +11,7 @@ export const shallowCompareAreEqual = (a: unknown, b: unknown) => {
 }
 
 export const toImmutable = <T extends unknown>(input: T): Immutable<T> => produce<T>(input, () => {}) as Immutable<T>
+
+export const randomId = () => {
+  return Math.random().toString(36).substring(2, 15)
+}

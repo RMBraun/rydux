@@ -3,7 +3,7 @@
     "target": "es6",
     "lib": [
       "DOM",
-      "ESNext",
+      "ESNext"
     ],
     "jsx": "react",
     "esModuleInterop": true,
@@ -18,17 +18,19 @@
     "outDir": "dist"
   },
   "include": [
-    "index.ts",
     "types.d.ts",
-    "rydux.tsx",
-    "rydux-context.tsx",
+    "index.ts",
+    "client.ts",
+    "server.tsx",
+    "SerializeSliceToClient.tsx",
     "global-store.ts",
     "event-emitter.ts",
     "constants.ts",
-    "utils.ts",
+    "utils.ts"
   ],
   "exclude": [
     "node_modules",
     "tests",
+    "test.ts"
   ]
 }
