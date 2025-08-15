@@ -25,7 +25,14 @@ export const CousinComponent: React.FC = () => {
       </pre>
       <button
         onClick={() => {
-          CountReducer.actions.updateText('new text-' + (localState + 1))
+          CountReducer.chain((actions) => {
+            actions.updateText('new text-' + (localState + 1))
+            actions.updateCousinOnly()
+            actions.updateCousinOnly()
+            actions.updateCousinOnly()
+            actions.updateCousinOnly()
+          })
+          // CountReducer.actions.updateText('new text-' + (localState + 1))
         }}
       >
         {'CLICK ME'}

@@ -5,6 +5,15 @@ import { randomId } from './utils'
 
 export type Reducer = { key: string; __slice_type: SliceState }
 
+type ActionOptions = {
+  /** Prevents the action from dispatching event to listeners */
+  noDispatch?: boolean
+}
+
+type ChainedActionOptions = {
+  noDispatch?: true
+}
+
 export const dispatch = (key: string, slice: SliceState) => {
   EventEmitter.dispatch(key, slice)
 }
@@ -39,25 +48,50 @@ export const createReducer = <
     GlobalStore.createSlice(key, props.defaultState)
   }
 
-  const actions = Object.fromEntries(
-    Object.entries(props.actions).map(([actionName, action]) => [
+  type Actions = {
+    [k in keyof ReducerActions]: Parameters<ReducerActions[k]>[1] extends undefined
+      ? (options?: ActionOptions) => Slice
+      : undefined extends Parameters<ReducerActions[k]>[1]
+        ? (value?: Parameters<ReducerActions[k]>[1], options?: ActionOptions) => Slice
+        : (value: Parameters<ReducerActions[k]>[1], options?: ActionOptions) => Slice
+  }
+
+  type ChainedActions = {
+    [k in keyof ReducerActions]: Parameters<ReducerActions[k]>[1] extends undefined
+      ? (options?: ChainedActionOptions) => Slice
+      : undefined extends Parameters<ReducerActions[k]>[1]
+        ? (value?: Parameters<ReducerActions[k]>[1], options?: ChainedActionOptions) => Slice
+        : (value: Parameters<ReducerActions[k]>[1], options?: ChainedActionOptions) => Slice
+  }
+
+  const actionEntries = Object.entries(props.actions).map(([actionName, action]) => {
+    return [
       actionName,
-      (value: unknown) => {
+      (value: unknown, options?: ActionOptions) => {
         const newSlice = GlobalStore.replaceSlice(
           key,
           produce(GlobalStore.getSlice<Slice>(key), (draft) => action(draft, value))
         )
 
-        EventEmitter.dispatch(key, newSlice)
+        if (!options?.noDispatch) {
+          EventEmitter.dispatch(key, newSlice)
+        }
+
+        return newSlice
       }
-    ])
-  ) as {
-    [k in keyof ReducerActions]: Parameters<ReducerActions[k]>[1] extends undefined
-      ? () => void
-      : undefined extends Parameters<ReducerActions[k]>[1]
-        ? (value?: Parameters<ReducerActions[k]>[1]) => void
-        : (value: Parameters<ReducerActions[k]>[1]) => void
-  }
+    ]
+  }) as [string, (value: unknown, options?: ActionOptions) => Slice][]
+
+  const actions = Object.fromEntries(actionEntries) as Actions
+
+  const chainedActions = Object.fromEntries(
+    actionEntries.map(([actionName, action]) => {
+      return [
+        actionName,
+        (value: unknown, options?: ChainedActionOptions) => action(value, { ...options, noDispatch: true })
+      ]
+    })
+  ) as ChainedActions
 
   /**
    * Returns the current slice state.
@@ -88,12 +122,30 @@ export const createReducer = <
     return newSlice
   }
 
+  /**
+   * Dispatches the current slice state to all listeners.
+   */
+  const reducerDispatch = () => {
+    EventEmitter.dispatch(key, GlobalStore.getSlice<Slice>(key))
+  }
+
+  /**
+   * Chains multiple actions together and dispatches them in a single event.
+   * @param batchFunction The function containing the actions to chain.
+   */
+  const chain = (batchFunction: (actions: ChainedActions) => void) => {
+    batchFunction(chainedActions)
+    reducerDispatch()
+  }
+
   return {
     key,
     actions,
     getSlice,
     replaceSlice,
     updateSlice,
+    dispatch: reducerDispatch,
+    chain,
     __rydux_instance_ID: randomId(),
     __slice_type: {} as Slice
   }

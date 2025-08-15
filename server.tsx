@@ -14,6 +14,8 @@ export function UpdateSlice<R extends Reducer>({
   state: R['__slice_type']
   replace?: boolean
 }>): React.JSX.Element {
+  // Server and client components update in separate environments.
+  // This component is used to update the slice state on the server side.
   if (!GlobalStore.hasSlice(reducer.key)) {
     throw new Error(`Reducer with key "${reducer.key}" does not exist in the global store.`)
   } else {

@@ -3,6 +3,10 @@
 import React, { PropsWithChildren, useRef } from 'react'
 import { GlobalStore, SliceState } from './global-store'
 
+/**
+ * Create a client boundary and serialize the given state to the client.
+ * This component is used to ensure that the slice state is available on the client side.
+ */
 export const SerializeSliceToClient: React.FC<
   PropsWithChildren<{
     reducerKey: string
