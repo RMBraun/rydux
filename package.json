@@ -1,7 +1,7 @@
 {
   "name": "@rybr/rydux",
   "version": "2.0.0",
-  "description": "Simple flux framework for JavaScript, React, NextJs, and NodeJs",
+  "description": "Simple flux framework for JavaScript, React, NextJs, TanStack Start, and NodeJs",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -36,7 +36,8 @@
     "context",
     "React",
     "NodeJs",
-    "NextJs"
+    "NextJs",
+    "TanStack"
   ],
   "author": "Ryan Braun",
   "license": "MIT",
