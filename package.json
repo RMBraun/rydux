@@ -1,6 +1,6 @@
 {
   "name": "@rybr/rydux",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Simple flux framework for JavaScript, React, NextJs, TanStack Start, and NodeJs",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -46,8 +46,8 @@
   },
   "homepage": "https://github.com/RMBraun/rydux#readme",
   "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react": "=18.0.0",
+    "react-dom": ">=18.0.0"
   },
   "dependencies": {
     "immer": "^10.1.1",
