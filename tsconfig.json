@@ -5,20 +5,18 @@
       "DOM",
       "ESNext"
     ],
-    "jsx": "react",
-    "esModuleInterop": true,
-    "allowJs": false,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "module": "CommonJS",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "sourceMap": true,
     "declaration": true,
-    "outDir": "dist"
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "jsx": "react",
+    "forceConsistentCasingInFileNames": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
   },
   "include": [
     "types.d.ts",
+    "react-context.tsx",
     "index.ts",
     "client.ts",
     "server.tsx",
@@ -30,7 +28,5 @@
   ],
   "exclude": [
     "node_modules",
-    "tests",
-    "test.ts"
   ]
 }

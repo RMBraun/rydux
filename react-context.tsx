@@ -1,14 +1,10 @@
 'use client'
 
 import { Draft, Immutable, produce } from 'immer'
-import React, { type PropsWithChildren, useContext, useMemo, useState, useRef } from 'react'
+import React, { type PropsWithChildren, useContext, useMemo, useRef, useState } from 'react'
+import { shallowCompareAreEqual, toImmutable } from './utils'
 
 type Action<S> = (store: Draft<S>, value?: any) => void
-
-const toImmutable = <T extends unknown>(input: T): Immutable<T> => produce<T>(input, () => {}) as Immutable<T>
-
-const shallowCompareAreEqual = <O extends object>(newObj: O, oldObj: O) =>
-  !(Object.keys(newObj) as Array<keyof O>).some((key) => newObj[key] !== oldObj[key])
 
 export const createReducer = <
   S extends Record<string, unknown>,
@@ -23,7 +19,7 @@ export const createReducer = <
   const context = React.createContext(
     toImmutable({
       store: props.defaultStore,
-      actions: props.actions as unknown as Actions,
+      actions: props.actions as unknown as Actions
     })
   )
 
@@ -35,7 +31,7 @@ export const createReducer = <
         Object.fromEntries(
           Object.entries(props.actions).map(([key, action]) => [
             key,
-            (value) => setStore(produce<S>((draft) => action(draft, value))),
+            (value) => setStore(produce<S>((draft) => action(draft, value)))
           ])
         ) as Actions,
       []
@@ -45,7 +41,7 @@ export const createReducer = <
       () =>
         toImmutable({
           store,
-          actions,
+          actions
         }),
       [store]
     )
@@ -75,7 +71,7 @@ export const createReducer = <
     return useMemo(
       () => ({
         ...Context,
-        slice,
+        slice
       }),
       [slice]
     )
@@ -84,6 +80,6 @@ export const createReducer = <
   return {
     context,
     StoreProvider,
-    useStore,
+    useStore
   }
 }

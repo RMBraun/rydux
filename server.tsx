@@ -1,7 +1,7 @@
 import React, { PropsWithChildren } from 'react'
 import 'server-only'
-import { type Reducer } from '.'
 import { GlobalStore } from './global-store'
+import { type Reducer } from './index'
 import { SerializeSliceToClient } from './SerializeSliceToClient'
 
 export function UpdateSlice<R extends Reducer>({

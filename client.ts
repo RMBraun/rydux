@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { type Reducer } from '.'
 import { EventEmitter } from './event-emitter'
 import { GlobalStore } from './global-store'
+import { type Reducer } from './index'
 import { shallowCompareAreEqual } from './utils'
 
 export function useSlice<R extends Reducer, S extends R['__slice_type'], O extends unknown = S>(
