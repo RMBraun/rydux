@@ -1,29 +1,32 @@
 {
   "compilerOptions": {
-    "target": "ES6",
+    "target": "es6",
     "lib": [
       "DOM",
-      "ESNext",
+      "ESNext"
     ],
-    "esModuleInterop": true,
-    "allowJs": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "module": "CommonJS",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "sourceMap": true,
     "declaration": true,
-    "outDir": "dist"
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "jsx": "react",
+    "forceConsistentCasingInFileNames": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
   },
-  "files": [
+  "include": [
+    "types.d.ts",
+    "react-context.tsx",
     "index.ts",
+    "client.ts",
+    "server.tsx",
+    "SerializeSliceToClient.tsx",
+    "global-store.ts",
+    "event-emitter.ts",
+    "constants.ts",
+    "utils.ts"
   ],
   "exclude": [
     "node_modules",
-  ],
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node",
-  }
+  ]
 }

@@ -1,14 +1,29 @@
 {
   "name": "@rybr/rydux",
-  "version": "1.0.0",
-  "description": "Simple flux framework for JavaScript and NodeJs",
-  "main": "./dist/index.js",
+  "version": "2.0.0",
+  "description": "Simple flux framework for JavaScript, React, NextJs, and NodeJs",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/esm/index.d.ts"
+    },
+    "./*": {
+      "import": "./dist/esm/*.js",
+      "require": "./dist/cjs/*.js"
+    }
+  },
+  "type": "module",
   "files": [
     "./dist"
   ],
   "scripts": {
-    "tests": "npx ts-node ./tests/global.tests.ts",
-    "build": "tsc"
+    "tests": "tsx ./tests/unit-tests/global.tests.ts",
+    "format": "prettier --write .",
+    "build": "rm -rf ./dist && tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json"
   },
   "repository": {
     "type": "git",
@@ -17,6 +32,8 @@
   "keywords": [
     "flux",
     "redux",
+    "reducer",
+    "context",
     "React",
     "NodeJs",
     "NextJs"
@@ -28,14 +45,18 @@
   },
   "homepage": "https://github.com/RMBraun/rydux#readme",
   "dependencies": {
-    "eventemitter3": "^4.0.7",
-    "immer": "^9.0.12",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "immer": "^10.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "server-only": "^0.0.1",
+    "eventemitter3": "5.0.1"
   },
   "devDependencies": {
-    "@types/node": "^18.14.0",
-    "@types/react": "^18.0.28",
-    "typescript": "5.2.2"
+    "@types/node": "^22.15.29",
+    "@types/react": "^18.3.5",
+    "typescript": "^5.8.3",
+    "prettier": "3.6.2",
+    "prettier-plugin-organize-imports": "4.2.0",
+    "tsx": "^4.19.0"
   }
 }

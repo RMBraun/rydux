@@ -1,11 +1,4 @@
 {
-  "cSpell.words": [
-    "immer",
-    "Protos",
-    "Rydux",
-    "UAFs",
-    "UEFs"
-  ],
-  "typescript.enablePromptUseWorkspaceTsdk": true,
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
 }
