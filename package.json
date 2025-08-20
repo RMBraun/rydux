@@ -1,6 +1,6 @@
 {
   "name": "@rybr/rydux",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Simple flux framework for JavaScript, React, NextJs, TanStack Start, and NodeJs",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -45,19 +45,23 @@
     "url": "https://github.com/RMBraun/rydux/issues"
   },
   "homepage": "https://github.com/RMBraun/rydux#readme",
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
   "dependencies": {
     "immer": "^10.1.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
     "server-only": "^0.0.1",
     "eventemitter3": "5.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.15.29",
     "@types/react": "^18.3.5",
-    "typescript": "^5.8.3",
     "prettier": "3.6.2",
     "prettier-plugin-organize-imports": "4.2.0",
-    "tsx": "^4.19.0"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3"
   }
 }
