@@ -1,6 +1,6 @@
 {
   "name": "@rybr/rydux",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Simple flux framework for JavaScript, React, NextJs, TanStack Start, and NodeJs",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",

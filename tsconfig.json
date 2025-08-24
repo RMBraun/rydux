@@ -15,16 +15,12 @@
     "moduleResolution": "node",
   },
   "include": [
-    "types.d.ts",
-    "react-context.tsx",
-    "index.ts",
-    "client.ts",
-    "server.tsx",
-    "SerializeSliceToClient.tsx",
-    "global-store.ts",
-    "event-emitter.ts",
-    "constants.ts",
-    "utils.ts"
+    "src/react-context.tsx",
+    "src/index.ts",
+    "src/client.ts",
+    "src/server.tsx",
+    "src/SerializeSliceToClient.tsx",
+    "src/utils.ts"
   ],
   "exclude": [
     "node_modules",

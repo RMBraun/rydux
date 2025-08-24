@@ -2,11 +2,11 @@
 
 import { Draft, Immutable, produce } from 'immer'
 import React, { type PropsWithChildren, useContext, useMemo, useRef, useState } from 'react'
-import { shallowCompareAreEqual, toImmutable } from './utils'
+import { shallowCompareAreEqual, toImmutable } from './utils.js'
 
 type Action<S> = (store: Draft<S>, value?: any) => void
 
-export const createReducer = <
+export const createStore = <
   S extends Record<string, unknown>,
   A extends Record<string, Action<S>>,
   Actions extends {
