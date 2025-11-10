@@ -1,20 +1,20 @@
 'use client'
 
 import React, { PropsWithChildren, useRef } from 'react'
-import { type Reducer, type SliceState } from './index.js'
+import { type Reducer } from './index.js'
 
 /**
  * Create a client boundary and serialize the given state to the client.
  * This component is used to ensure that the slice state is available on the client side.
  */
-export function SerializeSliceToClient<R extends Reducer>({
+export function UpdateSlice<R extends Reducer>({
   reducer,
   state,
   replace = false,
   children
 }: PropsWithChildren<{
   reducer: R
-  state: SliceState
+  state: R['__slice_type']
   replace?: boolean
 }>) {
   const hasRun = useRef(false)

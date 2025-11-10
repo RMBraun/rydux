@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { SliceState, type Reducer } from './index.js'
 import { shallowCompareAreEqual } from './utils.js'
 
-export function useSlice<R extends Reducer, S extends R['__slice_type'], O extends unknown = S>(
+export function useSlice<R extends Reducer, S extends SliceState = R['__slice_type'], O extends unknown = S>(
   reducer: R,
   pickFunction: (slice: S) => O = (slice: S) => slice as unknown as O
 ) {

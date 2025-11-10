@@ -1,7 +1,6 @@
 import React, { PropsWithChildren } from 'react'
-import 'server-only'
 import { type Reducer } from './index.js'
-import { SerializeSliceToClient } from './SerializeSliceToClient.js'
+import { UpdateSlice as UpdateSliceClient } from './UpdateSlice.js'
 
 /**
  * Server and client components update in separate environments.
@@ -25,12 +24,12 @@ export function UpdateSlice<R extends Reducer>({
   }
 
   return (
-    <SerializeSliceToClient
+    <UpdateSliceClient
       reducer={reducer}
       state={state}
       replace={replace}
     >
       {children}
-    </SerializeSliceToClient>
+    </UpdateSliceClient>
   )
 }

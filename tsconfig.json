@@ -19,7 +19,7 @@
     "src/index.ts",
     "src/client.ts",
     "src/server.tsx",
-    "src/SerializeSliceToClient.tsx",
+    "src/UpdateSlice.tsx",
     "src/utils.ts"
   ],
   "exclude": [

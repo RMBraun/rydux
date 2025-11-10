@@ -1,5 +1,5 @@
 import EE from 'eventemitter3'
-import { Draft, produce } from 'immer'
+import { produce } from 'immer'
 import { randomId, toImmutable } from './utils.js'
 
 declare global {
@@ -33,6 +33,9 @@ class EventEmitter {
   ee: EE = new EE()
   id = randomId()
 
+  /**
+   * Returns the singleton EventEmitter instance from the global object.
+   */
   static getInstance() {
     if (!globalThis[WINDOW_GLOBAL_EVENT_EMITTER_KEY]) {
       globalThis[WINDOW_GLOBAL_EVENT_EMITTER_KEY] = new EventEmitter()
@@ -41,23 +44,44 @@ class EventEmitter {
     return globalThis[WINDOW_GLOBAL_EVENT_EMITTER_KEY]
   }
 
+  /**
+   * Dispatches an event to all listeners for a given key.
+   * @param key The event key.
+   * @param slice The slice state to emit.
+   */
   dispatch(key: string, slice: SliceState) {
     this.ee.emit(key, slice)
   }
 
+  /**
+   * Adds a listener for a given key.
+   * @param key The event key.
+   * @param callback The callback to invoke with the slice state.
+   */
   on<S extends SliceState>(key: string, callback: (slice: S) => void) {
     this.ee.on(key, callback)
   }
 
+  /**
+   * Removes a listener for a given key.
+   * @param key The event key.
+   * @param callback The callback to remove.
+   */
   off<S extends SliceState>(key: string, callback: (slice: S) => void) {
     this.ee.off(key, callback)
   }
 }
 
+/**
+ * GlobalStore manages all slice states in a singleton, immutable store.
+ */
 class GlobalStore {
   id = randomId()
   store: Store = toImmutable({})
 
+  /**
+   * Returns the singleton GlobalStore instance from the global object.
+   */
   static getInstance() {
     if (!globalThis[WINDOW_GLOBAL_STORE_KEY]) {
       globalThis[WINDOW_GLOBAL_STORE_KEY] = new GlobalStore()
@@ -66,10 +90,19 @@ class GlobalStore {
     return globalThis[WINDOW_GLOBAL_STORE_KEY]
   }
 
+  /**
+   * Checks if a slice exists in the store.
+   * @param key The slice key.
+   */
   hasSlice(key: string) {
     return key in this.store
   }
 
+  /**
+   * Creates a new slice in the store.
+   * @param key The slice key.
+   * @param slice The initial slice state.
+   */
   createSlice<S extends SliceState>(key: string, slice: S) {
     if (!(key in this.store)) {
       this.store = produce(this.store, (draft) => {
@@ -80,6 +113,10 @@ class GlobalStore {
     return this.store[key] as S
   }
 
+  /**
+   * Gets a slice from the store.
+   * @param key The slice key.
+   */
   getSlice<S extends SliceState>(key: string): S {
     if (!(key in this.store)) {
       throw new Error(`Slice with key "${key}" does not exist in the global store.`)
@@ -88,6 +125,11 @@ class GlobalStore {
     return this.store[key] as S
   }
 
+  /**
+   * Replaces a slice in the store.
+   * @param key The slice key.
+   * @param slice The new slice state.
+   */
   replaceSlice<S extends SliceState>(key: string, slice: S) {
     this.store = produce(this.store, (draft) => {
       draft[key] = slice
@@ -96,6 +138,11 @@ class GlobalStore {
     return this.store[key] as S
   }
 
+  /**
+   * Updates a slice in the store.
+   * @param key The slice key.
+   * @param slice The partial slice state to merge.
+   */
   updateSlice<S extends SliceState>(key: string, slice: S) {
     this.store = produce(this.store, (draft) => {
       draft[key] = Object.assign(draft[key], slice)
@@ -105,10 +152,17 @@ class GlobalStore {
   }
 }
 
+/**
+ * Creates a reducer with actions, state management, and event listeners.
+ * @param key The unique key for this slice.
+ * @param props.defaultState The initial state for the slice.
+ * @param props.actions An object of reducer functions.
+ * @param props.replaceIfExists Whether to replace the slice if it already exists.
+ */
 export const createReducer = <
-  Key extends string,
   Slice extends SliceState,
-  ReducerActions extends Record<string, (slice: Draft<Slice>, value?: any) => void>
+  ReducerActions extends Record<string, (slice: Slice, value?: any) => void>,
+  Key extends string
 >(
   key: Key,
   props: {
@@ -164,7 +218,7 @@ export const createReducer = <
       (value: unknown, options?: ActionOptions) => {
         const newSlice = GlobalStore.getInstance().replaceSlice(
           key,
-          produce(GlobalStore.getInstance().getSlice<Slice>(key), (draft) => action(draft, value))
+          produce(GlobalStore.getInstance().getSlice<Slice>(key), (draft) => action(draft as Slice, value))
         )
 
         if (!options?.noDispatch) {
@@ -216,10 +270,18 @@ export const createReducer = <
     return newSlice
   }
 
+  /**
+   * Adds a listener for slice updates.
+   * @param callback The callback to invoke with the slice state.
+   */
   const addListener = (callback: (slice: Slice) => void) => {
     EventEmitter.getInstance().on(key, callback)
   }
 
+  /**
+   * Removes a listener for slice updates.
+   * @param callback The callback to remove.
+   */
   const removeListener = (callback: (slice: Slice) => void) => {
     EventEmitter.getInstance().off(key, callback)
   }
